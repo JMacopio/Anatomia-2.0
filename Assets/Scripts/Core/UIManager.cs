@@ -105,7 +105,7 @@ public class UIManager : MonoBehaviour
         panelHistory.Clear();
         ShowPanel(loginPanel, false);
         ShowBottomNav(false);
-        //PlayerSessionManager.Instance?.ClearSession();
+        PlayerSessionManager.Instance?.ClearSession();
     }
 
 }
