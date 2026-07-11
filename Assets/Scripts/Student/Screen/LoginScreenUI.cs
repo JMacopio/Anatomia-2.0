@@ -16,6 +16,7 @@ public class LoginScreenUI : MonoBehaviour
     public Button signInBtn;
     public Button googleSignInBtn;
     public Button adminLoginBtn;
+    public Button signUpBtn;        // NEW — "Don't have an account? Sign Up"
 
     [Header("UI Feedback")]
     public TMP_Text errorText;
@@ -27,9 +28,6 @@ public class LoginScreenUI : MonoBehaviour
 
     private bool passwordVisible = false;
 
-
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         // Setup password field
@@ -41,17 +39,12 @@ public class LoginScreenUI : MonoBehaviour
         googleSignInBtn.onClick.AddListener(OnGoogleSignIn);
         adminLoginBtn.onClick.AddListener(OnAdminLogin);
         togglePasswordBtn.onClick.AddListener(TogglePasswordVisibility);
+        signUpBtn?.onClick.AddListener(() =>
+            UIManager.Instance?.OpenStudentSignUp());
 
         // Clear error
         if (errorText) errorText.gameObject.SetActive(false);
         if (loadingSpinner) loadingSpinner.SetActive(false);
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     void TogglePasswordVisibility()
@@ -65,7 +58,7 @@ public class LoginScreenUI : MonoBehaviour
             eyeIcon.sprite = passwordVisible ? eyeOpenSprite : eyeClosedSprite;
     }
 
-    public void OnSignIn()
+    void OnSignIn()
     {
         string email = emailField.text.Trim();
         string pass = passwordField.text;
@@ -94,17 +87,19 @@ public class LoginScreenUI : MonoBehaviour
         PlayerSessionManager.Instance.Login(email, pass);
     }
 
-    public void OnGoogleSignIn()
+    void OnGoogleSignIn()
     {
         // Integrate Google Sign-In SDK here
         Debug.Log("Google Sign-In pressed");
         StartCoroutine(SignInRoutine("google@student.com", "oauth"));
     }
 
-    public void OnAdminLogin()
+    void OnAdminLogin()
     {
-        // Navigate to admin login panel (not in student scope)
-        Debug.Log("Admin login pressed");
+        // Activate admin canvas / open admin login
+        // If using separate canvas: adminCanvas.SetActive(true);
+        //AdminUIManager.Instance?.ShowPanel(AdminUIManager.Instance.adminLoginPanel, false);
+        Debug.Log("[Login] Navigating to Admin Login.");
     }
 
     void ShowError(string msg)

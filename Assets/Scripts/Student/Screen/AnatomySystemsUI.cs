@@ -39,18 +39,18 @@ public class AnatomySystemsUI : MonoBehaviour
         {
             var card = Instantiate(systemCardPrefab, systemsListParent);
             var ui = card.GetComponent<SystemCardUI>();
-            //ui?.Setup(system, OnSystemSelected);
+            ui?.Setup(system, OnSystemSelected);
         }
     }
 
-    //void OnSystemSelected(AnatomySystemData system)
-    //{
-    //    // Pass selected system to 3D viewer
-    //    Model3DViewerUI viewer = UIManager.Instance.model3DPanel
-    //        .GetComponent<Model3DViewerUI>();
-    //    viewer?.LoadSystem(system);
-    //    UIManager.Instance.ShowPanel(UIManager.Instance.model3DPanel);
-    //}
+    void OnSystemSelected(AnatomySystemData system)
+    {
+        // Pass selected system to 3D viewer
+        Model3DViewerUI viewer = UIManager.Instance.model3DPanel
+            .GetComponent<Model3DViewerUI>();
+        viewer?.LoadSystem(system);
+        UIManager.Instance.ShowPanel(UIManager.Instance.model3DPanel);
+    }
 }
 
 [System.Serializable]

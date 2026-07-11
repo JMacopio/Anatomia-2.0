@@ -8,16 +8,18 @@ public class UIManager : MonoBehaviour
 
     [Header("Screen Panels")]
     public GameObject loginPanel;
+    public GameObject studentSignUpPanel;   // NEW
     public GameObject dashboardPanel;
-    public GameObject learnPanel;         // Anatomy Systems list
-    public GameObject model3DPanel;       // 3D Viewer
+    public GameObject learnPanel;
+    public GameObject model3DPanel;
     public GameObject quizSelectionPanel;
     public GameObject quizPanel;
     public GameObject quizResultPanel;
     public GameObject progressPanel;
     public GameObject achievementsPanel;
-    //public GameObject rewardPanel;
+    public GameObject rewardPanel;
     public GameObject profilePanel;
+    public GameObject joinClassroomPanel;   // NEW
 
     [Header("Bottom Navigation Bar")]
     public GameObject bottomNavBar;
@@ -39,21 +41,24 @@ public class UIManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        // Start with login screen
+        HideAllPanels();
         ShowPanel(loginPanel, false);
         bottomNavBar.SetActive(false);
         SetupNavButtons();
-
     }
 
-    // Update is called once per frame
-    void Update()
+    void HideAllPanels()
     {
-        
+        GameObject[] allPanels = {
+            loginPanel, studentSignUpPanel, dashboardPanel, learnPanel,
+            model3DPanel, quizSelectionPanel, quizPanel, quizResultPanel,
+            progressPanel, achievementsPanel, rewardPanel,
+            profilePanel, joinClassroomPanel
+        };
+        foreach (var p in allPanels)
+            if (p != null) p.SetActive(false);
     }
 
     void SetupNavButtons()
@@ -66,6 +71,7 @@ public class UIManager : MonoBehaviour
 
     public void ShowPanel(GameObject panel, bool addToHistory = true)
     {
+        if (panel == null) return;
         if (currentPanel != null)
         {
             if (addToHistory) panelHistory.Push(currentPanel);
@@ -100,12 +106,19 @@ public class UIManager : MonoBehaviour
 
     public void ShowBottomNav(bool show) => bottomNavBar.SetActive(show);
 
+    // Called from DashboardUI Join button
+    public void OpenJoinClassroom() => ShowPanel(joinClassroomPanel);
+
+    // Called from Login screen "Sign Up" button
+    public void OpenStudentSignUp() => ShowPanel(studentSignUpPanel);
+
     public void LogoutToLogin()
     {
         panelHistory.Clear();
+        HideAllPanels();
         ShowPanel(loginPanel, false);
         ShowBottomNav(false);
         PlayerSessionManager.Instance?.ClearSession();
     }
-
 }
+
