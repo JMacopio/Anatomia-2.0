@@ -17,6 +17,7 @@ public class AdminDashboardUI : MonoBehaviour
     public Button quizManagementBtn;
     public Button gamificationBtn;
     public Button analyticsBtn;
+    public Button createClassroomBtn;
 
     [Header("Pie Chart")]
     public PieChartRenderer pieChart;
@@ -27,11 +28,15 @@ public class AdminDashboardUI : MonoBehaviour
 
     void Start()
     {
+        //Header
         logoutBtn.onClick.AddListener(OnLogout);
+
+        //Management Buttons
         userManagementBtn.onClick.AddListener(() => AdminUIManager.Instance.OpenUserManagement());
         quizManagementBtn.onClick.AddListener(() => AdminUIManager.Instance.OpenQuizManagement());
         gamificationBtn.onClick.AddListener(() => AdminUIManager.Instance.OpenGamification());
         analyticsBtn.onClick.AddListener(() => AdminUIManager.Instance.OpenAnalytics());
+        createClassroomBtn.onClick.AddListener(() => AdminUIManager.Instance.OpenCreateClassroom());
 
         if (AdminSessionManager.Instance != null)
             AdminSessionManager.Instance.OnDataRefreshed += Refresh;
@@ -105,6 +110,8 @@ public class PieChartRenderer : MonoBehaviour
             float fill = percentages[i] / 100f;
             slices[i].sliceImage.fillAmount = fill;
             slices[i].sliceImage.color = colors[i];
+
+            // Rotate each slice to start where the last one ended
             slices[i].sliceImage.transform.localEulerAngles = new Vector3(0, 0, -rotation * 360f);
             rotation += fill;
             if (slices[i].labelText)
