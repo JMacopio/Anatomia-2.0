@@ -16,3 +16,4 @@ public class ProgressRowUI : MonoBehaviour
         if (dotColor) dotColor.color = dotActiveColor;
     }
 }
+
