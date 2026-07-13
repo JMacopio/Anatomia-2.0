@@ -31,6 +31,10 @@ public class UIManager : MonoBehaviour
     public Color navActiveColor = new Color(0.5f, 0.2f, 0.9f);
     public Color navInactiveColor = new Color(0.6f, 0.6f, 0.6f);
 
+    [Header("Canvas")]
+    public GameObject studentCanvas; //added
+    public GameObject adminCanvas;  //added
+
     private GameObject currentPanel;
     private Stack<GameObject> panelHistory = new Stack<GameObject>();
 
@@ -43,6 +47,9 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        studentCanvas.SetActive(true); //added
+        adminCanvas.SetActive(false); //added
+
         HideAllPanels();
         ShowPanel(loginPanel, false);
         bottomNavBar.SetActive(false);
@@ -119,6 +126,24 @@ public class UIManager : MonoBehaviour
         ShowPanel(loginPanel, false);
         ShowBottomNav(false);
         PlayerSessionManager.Instance?.ClearSession();
+    }
+
+    public void ShowStudentUI() //added
+    {
+        studentCanvas.SetActive(true);
+        adminCanvas.SetActive(false);
+        // Optionally reset to login panel
+        HideAllPanels();
+        ShowPanel(loginPanel, false);
+        ShowBottomNav(false);
+    }
+
+    public void ShowAdminUI() //added
+    {
+        studentCanvas.SetActive(false);
+        adminCanvas.SetActive(true);
+        // Optionally show admin login panel via AdminUIManager
+        AdminUIManager.Instance?.ShowPanel(AdminUIManager.Instance.adminLoginPanel, false);
     }
 }
 

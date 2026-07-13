@@ -3433,6 +3433,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 73833861}
+  - component: {fileID: 73833862}
   m_Layer: 5
   m_Name: AdminUIManager
   m_TagString: Untagged
@@ -3459,6 +3460,32 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &73833862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 73833860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50762e1b89a5ba2408d6e7de1953adea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdminUIManager
+  adminLoginPanel: {fileID: 1179512323}
+  adminSignUpPanel: {fileID: 1574415370}
+  adminDashboardPanel: {fileID: 1953121025}
+  adminUserManagementPanel: {fileID: 594578019}
+  adminQuizManagementPanel: {fileID: 1563411601}
+  adminGamificationPanel: {fileID: 2096826881}
+  adminAnalyticsPanel: {fileID: 709444440}
+  adminCreateClassroomPanel: {fileID: 2005124104}
+  createQuizModal: {fileID: 2128550943}
+  addQuestionModal: {fileID: 758252449}
+  addBadgeModal: {fileID: 0}
+  addLevelModal: {fileID: 0}
+  confirmDeleteModal: {fileID: 0}
+  modalBlocker: {fileID: 0}
 --- !u!1 &81118470
 GameObject:
   m_ObjectHideFlags: 0
@@ -17309,6 +17336,8 @@ MonoBehaviour:
   navIcons: []
   navActiveColor: {r: 0.5, g: 0.2, b: 0.9, a: 1}
   navInactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  studentCanvas: {fileID: 1076046782}
+  adminCanvas: {fileID: 1179512323}
 --- !u!1 &295939294
 GameObject:
   m_ObjectHideFlags: 0
@@ -19989,7 +20018,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &335448379
 RectTransform:
   m_ObjectHideFlags: 0
@@ -30779,7 +30808,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 115a82442f6cbb540b1f828ac6b60afd, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 58667a776f5a70142b0ccaaa4831f835, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -31155,7 +31184,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_TargetDisplay: 0
 --- !u!224 &572862623
 RectTransform:
@@ -42576,6 +42605,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 781442205}
   m_CullTransparentMesh: 1
+--- !u!114 &781671299 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2056222152789350194, guid: 430334ba4fb55c545a0545c855b1b9ff, type: 3}
+  m_PrefabInstance: {fileID: 3076553999706179447}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &782446677
 GameObject:
   m_ObjectHideFlags: 0
@@ -57655,7 +57695,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1076046783
 RectTransform:
   m_ObjectHideFlags: 0
@@ -64498,7 +64538,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.0000076294, y: -273.9}
+  m_AnchoredPosition: {x: 0.0000076294, y: -265.93}
   m_SizeDelta: {x: 119.39, y: 25.387}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1189230017
@@ -67389,6 +67429,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1239744118}
   m_CullTransparentMesh: 1
+--- !u!114 &1241170026 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6511936452439449272, guid: 430334ba4fb55c545a0545c855b1b9ff, type: 3}
+  m_PrefabInstance: {fileID: 3076553999706179447}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &1241444924
 GameObject:
   m_ObjectHideFlags: 0
@@ -67996,6 +68047,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1243862741}
   m_CullTransparentMesh: 1
+--- !u!114 &1244246591 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7805585489444925584, guid: 430334ba4fb55c545a0545c855b1b9ff, type: 3}
+  m_PrefabInstance: {fileID: 3076553999706179447}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &1246793682
 GameObject:
   m_ObjectHideFlags: 0
@@ -72986,6 +73048,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1331990879}
+  - component: {fileID: 1331990880}
   m_Layer: 5
   m_Name: AdminSessionManager
   m_TagString: Untagged
@@ -73012,6 +73075,52 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1331990880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1331990878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6a9a9d9816d5a84aa8eaf8f3f799bc4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdminSessionManager
+  adminData:
+    adminName: 
+    email: 
+    role: admin
+  students: []
+  quizzes: []
+  gamificationSettings:
+    easyPoints: 10
+    mediumPoints: 20
+    hardPoints: 30
+    badges: []
+    levels: []
+  analyticsData:
+    activeUsers: 0
+    avgScore: 0
+    quizzesDone: 0
+    completionRate: 0
+    activeUsersDelta: 0
+    avgScoreDelta: 0
+    quizzesDelta: 0
+    completionDelta: 0
+    topPerformers: []
+    commonMistakes: []
+    studentActivity:
+      totalStudents: 0
+      activeThisMonth: 0
+      averageLevel: 0
+      averagePoints: 0
+    excellentPct: 35
+    goodPct: 42
+    averagePct: 18
+    needsWorkPct: 5
+  isLoggedIn: 0
+  isFirebaseReady: 0
 --- !u!1 &1332438310
 GameObject:
   m_ObjectHideFlags: 0
@@ -98988,7 +99097,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!224 &1890271772
 RectTransform:
@@ -112191,9 +112300,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b37ee9eaa4d7614fa304090e7d829ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProgressRowUI
-  dotColor: {fileID: 0}
-  systemNameText: {fileID: 0}
-  percentText: {fileID: 0}
+  dotColor: {fileID: 1244246591}
+  systemNameText: {fileID: 1241170026}
+  percentText: {fileID: 781671299}
   dotActiveColor: {r: 0.4, g: 0.7, b: 1, a: 1}
 --- !u!1001 &5928184074199620187
 PrefabInstance:

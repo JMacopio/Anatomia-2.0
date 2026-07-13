@@ -113,7 +113,7 @@ public class AdminUIManager : MonoBehaviour
         panelHistory.Clear();
         ShowPanel(adminDashboardPanel, false);
         // Refresh dashboard data
-       // adminDashboardPanel.GetComponent<AdminDashboardUI>()?.Refresh();
+        adminDashboardPanel.GetComponent<AdminDashboardUI>()?.Refresh();
     }
 
     void OnLogout()

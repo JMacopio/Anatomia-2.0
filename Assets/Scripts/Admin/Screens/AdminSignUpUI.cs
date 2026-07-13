@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿using Firebase;
+using Firebase.Auth;
+using Firebase.Firestore;
+using Firebase.Extensions;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -42,8 +46,8 @@ public class AdminSignUpUI : MonoBehaviour
     private bool pass1Visible = false;
     private bool pass2Visible = false;
 
-    //private FirebaseAuth auth;
-    //private FirebaseFirestore db;
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
 
     void Start()
     {
@@ -79,14 +83,14 @@ public class AdminSignUpUI : MonoBehaviour
 
     void InitFirebase()
     {
-        //FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
-        //{
-        //    if (task.Result == DependencyStatus.Available)
-        //    {
-        //        auth = FirebaseAuth.DefaultInstance;
-        //        db = FirebaseFirestore.DefaultInstance;
-        //    }
-        //});
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.Result == DependencyStatus.Available)
+            {
+                auth = FirebaseAuth.DefaultInstance;
+                db = FirebaseFirestore.DefaultInstance;
+            }
+        });
     }
 
     // ── Toggle password visibility ───────────────────────────
@@ -171,54 +175,54 @@ public class AdminSignUpUI : MonoBehaviour
 
     void RegisterAdminAccount(string name, string email, string pass)
     {
-        //if (auth == null)
-        //{ ShowError("Firebase not ready. Please try again."); return; }
+        if (auth == null)
+        { ShowError("Firebase not ready. Please try again."); return; }
 
-        //auth.CreateUserWithEmailAndPasswordAsync(email, pass)
-        //    .ContinueWithOnMainThread(task =>
-        //    {
-        //        if (task.IsCanceled || task.IsFaulted)
-        //        {
-        //            ShowError(GetAuthError(task.Exception));
-        //            return;
-        //        }
+        auth.CreateUserWithEmailAndPasswordAsync(email, pass)
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsCanceled || task.IsFaulted)
+                {
+                    ShowError(GetAuthError(task.Exception));
+                    return;
+                }
 
-        //        FirebaseUser newUser = task.Result.User;
+                FirebaseUser newUser = task.Result.User;
 
-        //        // Update display name
-        //        UserProfile profile = new UserProfile { DisplayName = name };
-        //        newUser.UpdateUserProfileAsync(profile).ContinueWithOnMainThread(_ =>
-        //        {
-        //            // Save admin document in Firestore
-        //            CreateAdminDocument(newUser.UserId, name, email);
-        //        });
-        //    });
+                // Update display name
+                UserProfile profile = new UserProfile { DisplayName = name };
+                newUser.UpdateUserProfileAsync(profile).ContinueWithOnMainThread(_ =>
+                {
+                    // Save admin document in Firestore
+                    CreateAdminDocument(newUser.UserId, name, email);
+                });
+            });
     }
 
     void CreateAdminDocument(string uid, string name, string email)
     {
-        //var data = new System.Collections.Generic.Dictionary<string, object>
-        //{
-        //    { "name",       name },
-        //    { "email",      email },
-        //    { "role",       "admin" },
-        //    { "createdAt",  FieldValue.ServerTimestamp }
-        //};
+        var data = new System.Collections.Generic.Dictionary<string, object>
+        {
+            { "name",       name },
+            { "email",      email },
+            { "role",       "admin" },
+            { "createdAt",  FieldValue.ServerTimestamp }
+        };
 
-        //db.Collection("admins").Document(uid).SetAsync(data)
-        //    .ContinueWithOnMainThread(task =>
-        //    {
-        //        SetLoading(false);
-        //        if (task.IsFaulted)
-        //        {
-        //            ShowError("Account created but profile save failed. Contact support.");
-        //            return;
-        //        }
+        db.Collection("admins").Document(uid).SetAsync(data)
+            .ContinueWithOnMainThread(task =>
+            {
+                SetLoading(false);
+                if (task.IsFaulted)
+                {
+                    ShowError("Account created but profile save failed. Contact support.");
+                    return;
+                }
 
-        //        // Show success then navigate to admin login
-        //        ShowSuccess($"Admin account created for {name}!\nYou can now sign in.");
-        //        StartCoroutine(NavigateToLoginAfterDelay(2.5f));
-        //    });
+                // Show success then navigate to admin login
+                ShowSuccess($"Admin account created for {name}!\nYou can now sign in.");
+                StartCoroutine(NavigateToLoginAfterDelay(2.5f));
+            });
     }
 
     IEnumerator NavigateToLoginAfterDelay(float delay)
@@ -275,17 +279,17 @@ public class AdminSignUpUI : MonoBehaviour
         System.Text.RegularExpressions.Regex.IsMatch(email,
             @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
 
-    //string GetAuthError(System.AggregateException ex)
-    //{
-    //    var fbEx = ex?.GetBaseException() as Firebase.FirebaseException;
-    //    if (fbEx == null) return "Registration failed. Please try again.";
-    //    return (AuthError)fbEx.ErrorCode switch
-    //    {
-    //        AuthError.EmailAlreadyInUse => "This email is already registered.",
-    //        AuthError.InvalidEmail => "Invalid email address.",
-    //        AuthError.WeakPassword => "Password is too weak.",
-    //        AuthError.NetworkRequestFailed => "No internet connection.",
-    //        _ => "Registration failed. Please try again."
-    //    };
-    //}
+    string GetAuthError(System.AggregateException ex)
+    {
+        var fbEx = ex?.GetBaseException() as Firebase.FirebaseException;
+        if (fbEx == null) return "Registration failed. Please try again.";
+        return (AuthError)fbEx.ErrorCode switch
+        {
+            AuthError.EmailAlreadyInUse => "This email is already registered.",
+            AuthError.InvalidEmail => "Invalid email address.",
+            AuthError.WeakPassword => "Password is too weak.",
+            AuthError.NetworkRequestFailed => "No internet connection.",
+            _ => "Registration failed. Please try again."
+        };
+    }
 }

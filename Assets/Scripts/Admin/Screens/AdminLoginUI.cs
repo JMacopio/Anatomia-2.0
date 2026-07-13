@@ -74,15 +74,18 @@ public class AdminLoginUI : MonoBehaviour
         }
 
         SetLoading(true);
-       // AdminSessionManager.Instance?.Login(email, pass);
+        AdminSessionManager.Instance?.Login(email, pass);
     }
 
     void OnBackToStudent()
     {
         // Switch back to student canvas/login
         // If both canvases exist in scene, disable admin canvas and enable student canvas
-        gameObject.SetActive(false);
+        //gameObject.SetActive(false);
         // Alternatively: SceneManager.LoadScene("StudentScene");
+       
+        UIManager.Instance.ShowStudentUI(); //added
+
         Debug.Log("[AdminLogin] Back to Student Login pressed.");
     }
 

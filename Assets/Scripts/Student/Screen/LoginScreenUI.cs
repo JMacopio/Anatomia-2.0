@@ -98,7 +98,11 @@ public class LoginScreenUI : MonoBehaviour
     {
         // Activate admin canvas / open admin login
         // If using separate canvas: adminCanvas.SetActive(true);
-        //AdminUIManager.Instance?.ShowPanel(AdminUIManager.Instance.adminLoginPanel, false);
+        //adminCanvas.SetActive(true);
+        //studentCanvas.SetActive(false);
+        UIManager.Instance.ShowAdminUI(); //added
+
+        AdminUIManager.Instance?.ShowPanel(AdminUIManager.Instance.adminLoginPanel, false);
         Debug.Log("[Login] Navigating to Admin Login.");
     }
 

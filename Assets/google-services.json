@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "597465184116",
+    "project_id": "anato-95f9e",
+    "storage_bucket": "anato-95f9e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:597465184116:android:9d8f184011b1780de6de21",
+        "android_client_info": {
+          "package_name": "com.UnityTechnologies.com.unity.template.urpblank"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5kAc5Lv3LNR28ClZu7fB4l0Y5OHOtQK0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
