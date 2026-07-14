@@ -4,6 +4,9 @@ using UnityEngine.UI;
 
 public class AchievementsUI : MonoBehaviour
 {
+    [Header("Button")]
+    public Button backBtn;
+
     [Header("Header Stats")]
     public TMP_Text headerLevelText;
     public TMP_Text headerXPText;
@@ -23,7 +26,12 @@ public class AchievementsUI : MonoBehaviour
 
     void OnEnable() => PopulateUI();
 
-    void PopulateUI()
+    void Start()
+    {
+        backBtn.onClick.AddListener(() => UIManager.Instance.GoBack());
+    }
+
+        void PopulateUI()
     {
         var data = PlayerSessionManager.Instance?.studentData;
         if (data == null) return;
@@ -50,5 +58,5 @@ public class AchievementsUI : MonoBehaviour
             if (badge.isUnlocked) unlocked++;
         }
         badgeCountText.text = $"{unlocked} / {data.badges.Count}";
-    }
+        }
 }

@@ -90,11 +90,19 @@ public class UIManager : MonoBehaviour
 
     public void GoBack()
     {
+        Debug.Log($"Back pressed. History count: {panelHistory.Count}, Current: {currentPanel?.name}");
         if (panelHistory.Count > 0)
         {
             currentPanel.SetActive(false);
             currentPanel = panelHistory.Pop();
             currentPanel.SetActive(true);
+        }
+
+        else //added
+        {
+            // If nothing in history, go to Dashboard (or Login)
+            NavigateTo(dashboardPanel, 0);
+            // Or if you want to log out: LogoutToLogin();
         }
     }
 
