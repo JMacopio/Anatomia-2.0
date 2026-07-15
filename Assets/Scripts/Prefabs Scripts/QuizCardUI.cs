@@ -14,31 +14,31 @@ public class QuizCardUI : MonoBehaviour
     public TMP_Text pointsText;
     public Button startBtn;
 
-    private static readonly Dictionary<string, Color> diffColors = new Dictionary<string, Color>
+    static readonly Dictionary<string, Color> diffColors = new()
     {
-        { "easy",   new Color(0.2f, 0.8f, 0.4f) },
-        { "medium", new Color(1.0f, 0.7f, 0.0f) },
-        { "hard",   new Color(0.9f, 0.2f, 0.2f) },
+        { "easy",   new Color(0.20f, 0.78f, 0.35f) },
+        { "medium", new Color(0.95f, 0.61f, 0.07f) },
+        { "hard",   new Color(0.94f, 0.27f, 0.27f) },
     };
 
-    private QuizData quizData;
-    private System.Action<QuizData> onStartCallback;
+    private QuizData data;
+    private System.Action<QuizData> onStart;
 
-    public void Setup(QuizData data, System.Action<QuizData> callback)
+    public void Setup(QuizData quiz, System.Action<QuizData> callback)
     {
-        quizData = data;
-        onStartCallback = callback;
+        data = quiz;
+        onStart = callback;
 
-        titleText.text = data.quizTitle;
-        systemText.text = data.systemName;
-        difficultyText.text = data.difficulty;
-        timeText.text = $"{data.timeMinutes} min";
-        questionsText.text = data.questionCount.ToString();
-        pointsText.text = data.pointsReward.ToString();
+        titleText.text = quiz.quizTitle;
+        systemText.text = quiz.systemName;
+        difficultyText.text = quiz.difficulty;
+        timeText.text = $"{quiz.timeMinutes} min";
+        questionsText.text = quiz.questions.Count.ToString();
+        pointsText.text = quiz.pointsReward.ToString();
 
-        if (difficultyBadge && diffColors.ContainsKey(data.difficulty))
-            difficultyBadge.color = diffColors[data.difficulty];
+        if (difficultyBadge && diffColors.ContainsKey(quiz.difficulty))
+            difficultyBadge.color = diffColors[quiz.difficulty];
 
-        startBtn.onClick.AddListener(() => onStartCallback?.Invoke(quizData));
+        startBtn.onClick.AddListener(() => onStart?.Invoke(data));
     }
 }

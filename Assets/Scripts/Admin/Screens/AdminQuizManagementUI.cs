@@ -29,7 +29,7 @@ public class AdminQuizManagementUI : MonoBehaviour
 
     void OnEnable()
     {
-        //AdminSessionManager.Instance?.LoadQuizzes();
+        AdminSessionManager.Instance?.LoadQuizzes();
         Refresh();
     }
 
@@ -70,13 +70,13 @@ public class AdminQuizManagementUI : MonoBehaviour
     void OnAddQuestion(QuizRecord quiz)
     {
         // Store selected quiz reference then open modal
-        //AddQuestionModalUI.TargetQuizId = quiz.quizId;
+        AddQuestionModalUI.TargetQuizId = quiz.quizId;
         AdminUIManager.Instance.ShowAddQuestionModal();
     }
 
     void OnDeleteQuiz(QuizRecord quiz)
     {
-        //AdminSessionManager.Instance?.DeleteQuiz(quiz.quizId);
+        AdminSessionManager.Instance?.DeleteQuiz(quiz.quizId);
     }
 
     void OnDestroy()

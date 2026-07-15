@@ -62,7 +62,7 @@ public class AdminCreateClassroomUI : MonoBehaviour
         }
 
         SetLoading(true);
-        //AdminSessionManager.Instance?.CreateClassroom(name, desc, OnClassroomCreated);
+        AdminSessionManager.Instance?.CreateClassroom(name, desc, OnClassroomCreated);
     }
 
     void OnClassroomCreated(string code)

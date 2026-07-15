@@ -36,7 +36,7 @@ public class AdminUserManagementUI : MonoBehaviour
 
     void OnEnable()
     {
-       // AdminSessionManager.Instance?.LoadStudents();
+        AdminSessionManager.Instance?.LoadStudents();
         Refresh();
     }
 
@@ -86,7 +86,7 @@ public class AdminUserManagementUI : MonoBehaviour
         foreach (var student in students)
         {
             var row = Instantiate(userRowPrefab, userListParent);
-          //  row.GetComponent<UserRowUI>()?.Setup(student, OnToggleStatus, OnDeleteUser);
+            row.GetComponent<UserRowUI>()?.Setup(student, OnToggleStatus, OnDeleteUser);
         }
     }
 
@@ -98,13 +98,13 @@ public class AdminUserManagementUI : MonoBehaviour
 
     void OnToggleStatus(StudentRecord student, bool setActive)
     {
-      //  AdminSessionManager.Instance?.ToggleStudentStatus(student.uid, setActive);
+        AdminSessionManager.Instance?.ToggleStudentStatus(student.uid, setActive);
     }
 
     void OnDeleteUser(StudentRecord student)
     {
         // Show confirm modal before deleting
-       // AdminSessionManager.Instance?.DeleteStudent(student.uid);
+        AdminSessionManager.Instance?.DeleteStudent(student.uid);
     }
 
     void OnDestroy()

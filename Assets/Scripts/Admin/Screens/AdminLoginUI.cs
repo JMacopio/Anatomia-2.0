@@ -41,6 +41,8 @@ public class AdminLoginUI : MonoBehaviour
         if (AdminSessionManager.Instance != null)
         {
             AdminSessionManager.Instance.OnAdminLoginFailed += ShowError;
+
+            AdminSessionManager.Instance.OnAdminLoginSuccess += OnLoginSuccess; // Subscribe to login success event, also added
         }
     }
 
@@ -113,7 +115,23 @@ public class AdminLoginUI : MonoBehaviour
 
     void OnDestroy()
     {
-        if (AdminSessionManager.Instance != null)
+        //if (AdminSessionManager.Instance != null) { }
+        //AdminSessionManager.Instance.OnAdminLoginFailed -= ShowError;
+
+        if (AdminSessionManager.Instance != null) // Unsubscribe from events to prevent memory leaks, added
+        {
             AdminSessionManager.Instance.OnAdminLoginFailed -= ShowError;
+            AdminSessionManager.Instance.OnAdminLoginSuccess -= OnLoginSuccess;
+        }
+
+    }
+
+    private void OnLoginSuccess()
+    {
+        SetLoading(false);
+        ClearError();
+        Debug.Log("[AdminLogin] Admin login successful.");
+        // Navigate to admin dashboard or next screen
+        AdminUIManager.Instance?.ShowPanel(AdminUIManager.Instance.adminDashboardPanel, true);
     }
 }

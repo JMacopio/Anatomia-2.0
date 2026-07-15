@@ -49,6 +49,7 @@ public class QuestionRecord
     public string correctAnswer;
     public string difficulty;     // "Easy" | "Medium" | "Hard"
     public int points;
+    public string explanation;      // optional explanation shown after answer
 }
 
 [System.Serializable]
@@ -63,6 +64,7 @@ public class BadgeRecord
 [System.Serializable]
 public class LevelRecord
 {
+    public string docId;  // Firestore document ID
     public int levelNumber;
     public string title;          // e.g. "Novice"
     public int pointsRequired;
@@ -218,6 +220,9 @@ public class AdminSessionManager : MonoBehaviour
 
                 isLoggedIn = true;
                 LoadAllData();
+
+                //Added
+                OnAdminLoginSuccess?.Invoke();
             });
     }
 
@@ -380,6 +385,7 @@ public class AdminSessionManager : MonoBehaviour
                             foreach (var doc in lt.Result.Documents)
                                 gamificationSettings.levels.Add(new LevelRecord
                                 {
+                                    docId = doc.Id,     // added and Store the Firestore document ID for deletion or updates
                                     levelNumber = doc.GetValue<int>("levelNumber"),
                                     title = doc.GetValue<string>("title"),
                                     pointsRequired = doc.GetValue<int>("pointsRequired")

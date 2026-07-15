@@ -37,7 +37,7 @@ public class AdminGamificationUI : MonoBehaviour
 
     void OnEnable()
     {
-        //AdminSessionManager.Instance?.LoadGamificationSettings();
+        AdminSessionManager.Instance?.LoadGamificationSettings();
         Refresh();
     }
 
@@ -60,7 +60,7 @@ public class AdminGamificationUI : MonoBehaviour
         int easy = ParseField(easyPointsField, 10);
         int medium = ParseField(mediumPointsField, 20);
         int hard = ParseField(hardPointsField, 30);
-        //AdminSessionManager.Instance?.SavePointsConfig(easy, medium, hard);
+        AdminSessionManager.Instance?.SavePointsConfig(easy, medium, hard);
     }
 
     void BuildBadgeList(List<BadgeRecord> badges)
@@ -85,13 +85,13 @@ public class AdminGamificationUI : MonoBehaviour
 
     void OnDeleteBadge(BadgeRecord badge)
     {
-        //AdminSessionManager.Instance?.DeleteBadge(badge.badgeId, Refresh);
+        AdminSessionManager.Instance?.DeleteBadge(badge.badgeId, Refresh);
     }
 
     void OnDeleteLevel(LevelRecord level)
     {
         Debug.Log($"[Gamification] Delete level {level.levelNumber}");
-        // AdminSessionManager.Instance?.DeleteLevel(docId, Refresh);
+        AdminSessionManager.Instance?.DeleteLevel(level.docId, Refresh);
     }
 
     int ParseField(TMP_InputField field, int fallback)

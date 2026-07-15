@@ -74,7 +74,7 @@ public class AdminDashboardUI : MonoBehaviour
 
     void OnLogout()
     {
-        //AdminSessionManager.Instance?.Logout();
+        AdminSessionManager.Instance?.Logout();
     }
 
     void OnDestroy()
