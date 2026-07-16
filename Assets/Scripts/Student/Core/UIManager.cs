@@ -20,11 +20,13 @@ public class UIManager : MonoBehaviour
     public GameObject rewardPanel;
     public GameObject profilePanel;
     public GameObject joinClassroomPanel;   // NEW
+    public GameObject leaderboardPanel;     // NEW
 
     [Header("Bottom Navigation Bar")]
     public GameObject bottomNavBar;
     public Button navHomeBtn;
     public Button navLearnBtn;
+    public Button navLeaderboardBtn;        // NEW — replaces or adds to nav
     public Button navAchievementsBtn;
     public Button navProfileBtn;
     public Image[] navIcons;
@@ -62,7 +64,7 @@ public class UIManager : MonoBehaviour
             loginPanel, studentSignUpPanel, dashboardPanel, learnPanel,
             model3DPanel, quizSelectionPanel, quizPanel, quizResultPanel,
             progressPanel, achievementsPanel, rewardPanel,
-            profilePanel, joinClassroomPanel
+            profilePanel, joinClassroomPanel, leaderboardPanel
         };
         foreach (var p in allPanels)
             if (p != null) p.SetActive(false);
@@ -72,8 +74,9 @@ public class UIManager : MonoBehaviour
     {
         navHomeBtn.onClick.AddListener(() => NavigateTo(dashboardPanel, 0));
         navLearnBtn.onClick.AddListener(() => NavigateTo(learnPanel, 1));
-        navAchievementsBtn.onClick.AddListener(() => NavigateTo(achievementsPanel, 2));
-        navProfileBtn.onClick.AddListener(() => NavigateTo(profilePanel, 3));
+        navLeaderboardBtn.onClick.AddListener(() => NavigateTo(leaderboardPanel, 2)); // NEW
+        navAchievementsBtn.onClick.AddListener(() => NavigateTo(achievementsPanel, 3));
+        navProfileBtn.onClick.AddListener(() => NavigateTo(profilePanel, 4));
     }
 
     public void ShowPanel(GameObject panel, bool addToHistory = true)
@@ -126,6 +129,8 @@ public class UIManager : MonoBehaviour
 
     // Called from Login screen "Sign Up" button
     public void OpenStudentSignUp() => ShowPanel(studentSignUpPanel);
+
+    public void OpenLeaderboard() => NavigateTo(leaderboardPanel, 2);
 
     public void LogoutToLogin()
     {
