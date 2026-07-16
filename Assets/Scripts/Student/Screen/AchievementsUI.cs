@@ -53,7 +53,7 @@ public class AchievementsUI : MonoBehaviour
         foreach (var badge in data.badges)
         {
             var parent = badge.isUnlocked ? unlockedBadgesGrid : lockedBadgesGrid;
-            var card = Instantiate(badgeCardPrefab, parent);
+            var card = Instantiate(badgeCardPrefab, parent); //
             card.GetComponent<BadgeCardUI>()?.Setup(badge);
             if (badge.isUnlocked) unlocked++;
         }
