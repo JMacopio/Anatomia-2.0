@@ -160,6 +160,47 @@ public class PlayerSessionManager : MonoBehaviour
             });
     }
 
+    //added
+    //Google login
+    public void HandleGoogleSignIn(string uid, string displayName,
+                                string email, string photoUrl)
+    {
+        isLoggedIn = true;
+
+        // Try to load existing student document
+        db.Collection("students").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Debug.LogError("[GoogleSignIn] Firestore load failed.");
+                    NavigateToDashboard();
+                    return;
+                }
+
+                if (task.Result.Exists)
+                {
+                    // Existing user — load their data normally
+                    LoadStudentDataFromFirestore(uid);
+                }
+                else
+                {
+                    // New Google user — create their profile
+                    studentData = new StudentData();
+                    studentData.studentName = displayName;
+                    studentData.email = email;
+                    // photoUrl can be saved too if you display avatars
+                    SaveStudentDataToFirestore();
+
+                    Debug.Log($"[GoogleSignIn] New student profile created: {displayName}");
+                    OnDataLoaded?.Invoke();
+                    OnLoginSuccess?.Invoke();
+                    NavigateToDashboard();
+                }
+            });
+    }
+
     // REGISTER - Create new student account
     public void Register(string email, string password, string displayName)
     {
