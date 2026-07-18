@@ -2,7 +2,10 @@ using UnityEngine;
 
 public class StructureInfo : MonoBehaviour
 {
+    [Header("Bone Information")]
     public string structureName;
-    [TextArea] public string description;
+    [TextArea(3, 6)]
+    public string description;
+    public string category;  // e.g. "Skull", "Thorax", "Upper Limb"
 
 }
