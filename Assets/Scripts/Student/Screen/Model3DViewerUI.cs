@@ -234,8 +234,13 @@ public class Model3DViewerUI : MonoBehaviour
 
         Ray ray = modelCamera.ScreenPointToRay(screenPos);
 
+        // Draw a debug ray in the Scene view (visible in Editor)
+        Debug.DrawRay(ray.origin, ray.direction * 10f, Color.red, 2f);
+
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
         {
+            Debug.Log($"✅ Hit: {hit.collider.gameObject.name}");
+
             var info = hit.collider.GetComponent<StructureInfo>();
             if (info != null)
             {
@@ -251,6 +256,7 @@ public class Model3DViewerUI : MonoBehaviour
         }
         else
         {
+            Debug.Log("❌ Raycast hit nothing!");
             // Tapped empty space — close panel
             if (isBoneInfoOpen) CloseBoneInfo();
         }
