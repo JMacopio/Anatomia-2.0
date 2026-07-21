@@ -70,6 +70,9 @@ public class Model3DViewerUI : MonoBehaviour
         { "Skeletal System",  new Color(0.49f, 0.23f, 0.93f) }, // purple
     };
 
+    private float rotationX = 0f;
+    private float rotationY = 0f;
+
     // ─────────────────────────────────────────────────────────
     void Start()
     {
@@ -221,43 +224,88 @@ public class Model3DViewerUI : MonoBehaviour
     // ── Rotate the model ────────────────────────────────────
     void RotateModel(Vector2 delta)
     {
-        modelContainer.Rotate(Vector3.up,
-            -delta.x * rotationSpeed, Space.World);
-        modelContainer.Rotate(Vector3.right,
-             delta.y * rotationSpeed, Space.World);
+        //modelContainer.Rotate(Vector3.up,
+        //    -delta.x * rotationSpeed, Space.World);
+        //modelContainer.Rotate(Vector3.right,
+        //     delta.y * rotationSpeed, Space.World);
+
+        //added
+        rotationY += -delta.x * rotationSpeed;
+        rotationX += delta.y * rotationSpeed;
+
+        // Clamp vertical rotation — prevents flipping upside down
+        rotationX = Mathf.Clamp(rotationX, -60f, 60f);
+
+        modelContainer.localRotation =
+            Quaternion.Euler(rotationX, rotationY, 0f);
     }
 
     // ── Try to select a bone via raycast ────────────────────
     void TrySelectBone(Vector2 screenPos)
     {
+        //if (modelCamera == null) return;
+
+        //Ray ray = modelCamera.ScreenPointToRay(screenPos);
+
+        //// Draw a debug ray in the Scene view (visible in Editor)
+        //Debug.DrawRay(ray.origin, ray.direction * 10f, Color.red, 2f);
+
+        //if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
+        //{
+        //    Debug.Log($" Hit: {hit.collider.gameObject.name}");
+
+        //    var info = hit.collider.GetComponent<StructureInfo>();
+        //    if (info != null)
+        //    {
+        //        ShowBoneInfo(info);
+        //        return;
+        //    }
+
+        //    // Hit mesh but no StructureInfo — try parent
+        //    var parentInfo = hit.collider
+        //        .GetComponentInParent<StructureInfo>();
+        //    if (parentInfo != null)
+        //        ShowBoneInfo(parentInfo);
+        //}
+        //else
+        //{
+        //    Debug.Log(" Raycast hit nothing!");
+        //    // Tapped empty space — close panel
+        //    if (isBoneInfoOpen) CloseBoneInfo();
+        //}
+
         if (modelCamera == null) return;
 
-        Ray ray = modelCamera.ScreenPointToRay(screenPos);
+        // Convert screen position to RawImage local position
+        RectTransform rawRect = modelRawImage.GetComponent<RectTransform>();
 
-        // Draw a debug ray in the Scene view (visible in Editor)
-        Debug.DrawRay(ray.origin, ray.direction * 10f, Color.red, 2f);
+        // Check if touch is inside RawImage bounds
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            rawRect, screenPos,
+            null, out Vector2 localPoint))
+            return;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
+        // Convert local point to 0-1 UV coordinates
+        Rect rect = rawRect.rect;
+        float u = (localPoint.x - rect.x) / rect.width;
+        float v = (localPoint.y - rect.y) / rect.height;
+
+        // Clamp to valid range
+        if (u < 0 || u > 1 || v < 0 || v > 1) return;
+
+        // Create ray from Second Camera using UV coordinates
+        Ray ray = modelCamera.ViewportPointToRay(new Vector3(u, v, 0f));
+
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity,
+            LayerMask.GetMask("SkeletonModel")))
         {
-            Debug.Log($"✅ Hit: {hit.collider.gameObject.name}");
-
-            var info = hit.collider.GetComponent<StructureInfo>();
+            var info = hit.collider.GetComponent<StructureInfo>()
+                    ?? hit.collider.GetComponentInParent<StructureInfo>();
             if (info != null)
-            {
                 ShowBoneInfo(info);
-                return;
-            }
-
-            // Hit mesh but no StructureInfo — try parent
-            var parentInfo = hit.collider
-                .GetComponentInParent<StructureInfo>();
-            if (parentInfo != null)
-                ShowBoneInfo(parentInfo);
         }
         else
         {
-            Debug.Log("❌ Raycast hit nothing!");
-            // Tapped empty space — close panel
             if (isBoneInfoOpen) CloseBoneInfo();
         }
     }
@@ -276,8 +324,13 @@ public class Model3DViewerUI : MonoBehaviour
         // Slide up animation
         boneInfoPanel.SetActive(true);
         isBoneInfoOpen = true;
-        StopCoroutine(nameof(SlidePanel));
-        StartCoroutine(SlidePanel(true));
+        //StopCoroutine(nameof(SlidePanel));
+        //StartCoroutine(SlidePanel(true));
+
+        //added
+        var rect = boneInfoPanel.GetComponent<RectTransform>();
+        if (rect) rect.anchoredPosition = Vector2.zero;
+
 
         tapHintBubble?.SetActive(false);
     }
