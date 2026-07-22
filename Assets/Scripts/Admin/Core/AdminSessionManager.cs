@@ -11,7 +11,7 @@ public class AdminData
 {
     public string adminName = "";
     public string email = "";
-    public string role = "admin"; // "admin" | "superadmin"
+    public string role = "admins"; // "admin" | "superadmin"
 }
 
 [System.Serializable]
