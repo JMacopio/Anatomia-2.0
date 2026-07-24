@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -114,8 +115,7 @@ public class SkeletonAutoSetup : EditorWindow
         processedCount = 0;
         Undo.RegisterFullObjectHierarchyUndo(skeletonRoot, "Auto Setup Skeleton");
 
-        var allTransforms = skeletonRoot
-            .GetComponentsInChildren<Transform>(true);
+        var allTransforms = skeletonRoot.GetComponentsInChildren<Transform>(true);
 
         foreach (var t in allTransforms)
         {
@@ -126,34 +126,87 @@ public class SkeletonAutoSetup : EditorWindow
             var smr = t.GetComponent<SkinnedMeshRenderer>();
             if (mf == null && smr == null) continue;
 
-            // ── Add MeshCollider ────────────────────────────
-            var col = t.GetComponent<MeshCollider>();
-            if (col == null || overwriteExisting)
+            // ── Remove existing collider if overwriting ──────────
+            var existingCol = t.GetComponent<Collider>();
+            if (existingCol != null)
             {
-                if (col && overwriteExisting) DestroyImmediate(col);
-                col = t.gameObject.AddComponent<MeshCollider>();
-
-                if (smr != null)
+                if (overwriteExisting)
                 {
-                    Mesh baked = new Mesh();
-                    smr.BakeMesh(baked);
-                    col.sharedMesh = baked;
-                    col.convex = false;
+                    DestroyImmediate(existingCol);
                 }
-                else if (mf != null)
+                else
                 {
-                    col.sharedMesh = mf.sharedMesh;
+                    processedCount++;
+                    continue; // Skip this bone
                 }
             }
 
-            // ── Add StructureInfo ────────────────────────────
+            // ── Determine size for primitive collider ─────────────
+            float height = 0.1f;
+            float radius = 0.03f;
+
+            try
+            {
+                if (mf != null && mf.sharedMesh != null)
+                {
+                    Bounds b = mf.sharedMesh.bounds;
+                    height = Mathf.Max(b.size.y, 0.05f);
+                    radius = Mathf.Max(Mathf.Max(b.size.x, b.size.z) * 0.5f, 0.02f);
+                }
+                else if (smr != null && smr.sharedMesh != null)
+                {
+                    // For skinned bones, use local scale as a rough estimate
+                    Vector3 s = t.localScale;
+                    height = Mathf.Max(s.y * 0.5f, 0.05f);
+                    radius = Mathf.Max(Mathf.Max(s.x, s.z) * 0.3f, 0.02f);
+                }
+                else
+                {
+                    // No mesh data – fallback to simple sphere
+                    Debug.LogWarning($"[SkeletonAutoSetup] No mesh data for {t.name}, using default sphere.");
+                    radius = 0.05f;
+                    height = 0.1f;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[SkeletonAutoSetup] Error processing {t.name}: {e.Message}");
+                continue;
+            }
+
+            // ── Add primitive collider ────────────────────────────
+            if (height > radius * 1.8f)
+            {
+                CapsuleCollider cap = t.gameObject.AddComponent<CapsuleCollider>();
+                if (cap == null)
+                {
+                    Debug.LogError($"[SkeletonAutoSetup] Failed to add CapsuleCollider to {t.name}. Skipping.");
+                    continue;
+                }
+                cap.radius = radius;
+                cap.height = height * 2f;
+                cap.direction = 1;
+                cap.center = Vector3.zero;
+            }
+            else
+            {
+                SphereCollider sphere = t.gameObject.AddComponent<SphereCollider>();
+                if (sphere == null)
+                {
+                    Debug.LogError($"[SkeletonAutoSetup] Failed to add SphereCollider to {t.name}. Skipping.");
+                    continue;
+                }
+                sphere.radius = radius;
+                sphere.center = Vector3.zero;
+            }
+
+            // ── Add StructureInfo ────────────────────────────────
             var info = t.GetComponent<StructureInfo>();
             if (info == null || overwriteExisting)
             {
                 if (info && overwriteExisting) DestroyImmediate(info);
                 info = t.gameObject.AddComponent<StructureInfo>();
 
-                // Try to match bone name to dictionary
                 string cleanName = CleanName(t.name);
                 var match = FindBoneData(cleanName);
 
@@ -204,3 +257,4 @@ public class SkeletonAutoSetup : EditorWindow
             .TextInfo.ToTitleCase(raw.Replace("_", " ").Replace(".", " "));
     }
 }
+#endif

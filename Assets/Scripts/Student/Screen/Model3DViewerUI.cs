@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Android.Gradle.Manifest;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -90,10 +92,11 @@ public class Model3DViewerUI : MonoBehaviour
         systemTitleText.text = system.systemName;
         if (boneInfoPanel) boneInfoPanel.SetActive(false);
         isBoneInfoOpen = false;
-        if (modelContainer != null)
+        if (modelContainer != null && gameObject.activeInHierarchy) //added && gameObject.activeInHierarchy
             StartCoroutine(AutoFrameModel());
         tapHintBubble?.SetActive(true);
-        StartCoroutine(HideHintAfter(4f));
+        if (gameObject.activeInHierarchy) //added this if (gameObject.activeInHierarchy)
+            StartCoroutine(HideHintAfter(4f));
     }
 
     // AUTO-FRAME: moves camera to fit model regardless of FBX position
@@ -297,21 +300,42 @@ public class Model3DViewerUI : MonoBehaviour
         }
     }
 
-    void ShowBoneInfo(StructureInfo info)
+    //added
+    void ShowBoneInfo(string name, string description, string category)
     {
         if (boneInfoPanel == null) return;
-        boneNameText.text = info.structureName;
-        boneDescText.text = info.description;
-        if (categoryText) categoryText.text = info.category.ToUpper();
-        if (categoryTagBG && catColors.ContainsKey(info.category))
-            categoryTagBG.color = catColors[info.category];
+        boneNameText.text = name;
+        boneDescText.text = description;
+        if (categoryText) categoryText.text = category.ToUpper();
+        if (categoryTagBG && catColors.ContainsKey(category))
+            categoryTagBG.color = catColors[category];
 
         boneInfoPanel.SetActive(true);
         isBoneInfoOpen = true;
         var rect = boneInfoPanel.GetComponent<RectTransform>();
         if (rect) rect.anchoredPosition = Vector2.zero;
         tapHintBubble?.SetActive(false);
+
     }
+
+    void ShowBoneInfo(StructureInfo info)
+    {
+        //if (boneInfoPanel == null) return;
+        //boneNameText.text = info.structureName;
+        //boneDescText.text = info.description;
+        //if (categoryText) categoryText.text = info.category.ToUpper();
+        //if (categoryTagBG && catColors.ContainsKey(info.category))
+        //    categoryTagBG.color = catColors[info.category];
+
+        //boneInfoPanel.SetActive(true);
+        //isBoneInfoOpen = true;
+        //var rect = boneInfoPanel.GetComponent<RectTransform>();
+        //if (rect) rect.anchoredPosition = Vector2.zero;
+        //tapHintBubble?.SetActive(false);
+
+        ShowBoneInfo(info.structureName, info.description, info.category);
+    }
+
 
     void CloseBoneInfo()
     {
@@ -321,15 +345,21 @@ public class Model3DViewerUI : MonoBehaviour
 
     void ShowSystemInfo()
     {
+        //if (currentSystem == null) return;
+        //ShowBoneInfo(new StructureInfo
+        //{
+        //    structureName = currentSystem.systemName,
+        //    description = $"{currentSystem.systemName} has " +
+        //                    $"{currentSystem.structureCount} structures. " +
+        //                    "Tap any bone to learn more.",
+        //    category = "Skeletal System"
+        //});
         if (currentSystem == null) return;
-        ShowBoneInfo(new StructureInfo
-        {
-            structureName = currentSystem.systemName,
-            description = $"{currentSystem.systemName} has " +
-                            $"{currentSystem.structureCount} structures. " +
-                            "Tap any bone to learn more.",
-            category = "Skeletal System"
-        });
+        ShowBoneInfo(
+            currentSystem.systemName,
+            $"{currentSystem.systemName} has {currentSystem.structureCount} structures. Tap any bone to learn more.",
+            "Skeletal System"
+        );
     }
 
     void SetZoom(float z)
@@ -353,7 +383,8 @@ public class Model3DViewerUI : MonoBehaviour
             modelContainer.localRotation = Quaternion.identity;
             modelContainer.localScale = Vector3.one;
         }
-        if (modelContainer != null) StartCoroutine(AutoFrameModel());
+        if (modelContainer != null && gameObject.activeInHierarchy) //added && gameObject.activeInHierarchy
+            StartCoroutine(AutoFrameModel());
         CloseBoneInfo();
     }
 
