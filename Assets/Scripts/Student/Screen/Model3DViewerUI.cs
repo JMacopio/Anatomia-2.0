@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,9 +15,9 @@ public class Model3DViewerUI : MonoBehaviour
     public GameObject tapHintBubble;
 
     [Header("3D Display")]
-    public Camera modelCamera;      // Second Camera pointing at skeleton
-    public Transform modelContainer;   // parent of the skeleton GO
-    public RawImage modelRawImage;    // displays the Render Texture
+    public Camera modelCamera;
+    public Transform modelContainer;
+    public RawImage modelRawImage;
 
     [Header("Bone Info Panel")]
     public GameObject boneInfoPanel;
@@ -32,412 +33,360 @@ public class Model3DViewerUI : MonoBehaviour
     public Button zoomOutBtn;
     public Button rotateBtn;
     public Button infoBtn;
-    public Image rotateBtnBG;         // tinted when auto-rotate is ON
+    public Image rotateBtnBG;
 
     [Header("Touch Settings")]
     public float rotationSpeed = 0.25f;
-    public float zoomSpeed = 0.005f;
-    public float minScale = 0.4f;
-    public float maxScale = 3.5f;
+    public float zoomStep = 0.25f;
+    public float minZoom = 0.4f;
+    public float maxZoom = 3.5f;
     public float autoRotateSpeed = 30f;
 
-    // ── State ────────────────────────────────────────────────
-    private float currentScale = 1f;
+    private float currentZoom = 1f;
     private bool autoRotating = false;
-    private bool isFullscreen = false;
     private bool isBoneInfoOpen = false;
+    private float rotationX = 0f;
+    private float rotationY = 0f;
     private AnatomySystemData currentSystem;
 
-    // Gesture tracking
-    private Vector2 lastSingleTouchPos;
+    private Vector2 lastSinglePos;
     private float lastPinchDist;
     private bool wasPinching = false;
     private float touchStartTime;
     private Vector2 touchStartPos;
-    private const float TAP_MAX_DURATION = 0.25f;
-    private const float TAP_MAX_MOVE = 10f;
+    private const float TAP_DURATION = 0.25f;
+    private const float TAP_MOVE = 15f;
 
-    // Category colors
-    private static readonly System.Collections.Generic.Dictionary<string, Color>
-        categoryColors = new System.Collections.Generic.Dictionary<string, Color>
+    private static readonly Dictionary<string, Color> catColors =
+        new Dictionary<string, Color>
     {
-        { "Skull",            new Color(0.49f, 0.23f, 0.93f) }, // purple
-        { "Vertebral Column", new Color(0.23f, 0.51f, 0.96f) }, // blue
-        { "Thorax",           new Color(0.94f, 0.27f, 0.27f) }, // red
-        { "Upper Limb",       new Color(0.13f, 0.69f, 0.30f) }, // green
-        { "Pelvis",           new Color(0.95f, 0.61f, 0.07f) }, // amber
-        { "Lower Limb",       new Color(0.06f, 0.71f, 0.80f) }, // teal
-        { "Skeletal System",  new Color(0.49f, 0.23f, 0.93f) }, // purple
+        { "Skull",            new Color(0.49f, 0.23f, 0.93f) },
+        { "Vertebral Column", new Color(0.23f, 0.51f, 0.96f) },
+        { "Thorax",           new Color(0.94f, 0.27f, 0.27f) },
+        { "Upper Limb",       new Color(0.13f, 0.69f, 0.30f) },
+        { "Pelvis",           new Color(0.95f, 0.61f, 0.07f) },
+        { "Lower Limb",       new Color(0.06f, 0.71f, 0.80f) },
+        { "Skeletal System",  new Color(0.49f, 0.23f, 0.93f) },
     };
 
-    private float rotationX = 0f;
-    private float rotationY = 0f;
-
-    // ─────────────────────────────────────────────────────────
     void Start()
     {
-        // Buttons
         backBtn.onClick.AddListener(OnBack);
-        expandBtn?.onClick.AddListener(ToggleFullscreen);
         closeInfoBtn.onClick.AddListener(CloseBoneInfo);
         resetBtn.onClick.AddListener(ResetView);
         zoomInBtn.onClick.AddListener(ZoomIn);
         zoomOutBtn.onClick.AddListener(ZoomOut);
         rotateBtn.onClick.AddListener(ToggleAutoRotate);
         infoBtn?.onClick.AddListener(ShowSystemInfo);
+        expandBtn?.onClick.AddListener(ToggleFullscreen);
 
-        // Initial state
-        boneInfoPanel.SetActive(false);
+        if (boneInfoPanel) boneInfoPanel.SetActive(false);
         StartCoroutine(HideHintAfter(4f));
     }
 
-    // ── Load a system ─────────────────────────────────────────
     public void LoadSystem(AnatomySystemData system)
     {
         currentSystem = system;
         systemTitleText.text = system.systemName;
-        boneInfoPanel.SetActive(false);
-        ResetView();
+        if (boneInfoPanel) boneInfoPanel.SetActive(false);
+        isBoneInfoOpen = false;
+        if (modelContainer != null)
+            StartCoroutine(AutoFrameModel());
         tapHintBubble?.SetActive(true);
         StartCoroutine(HideHintAfter(4f));
     }
 
-    // ─────────────────────────────────────────────────────────
-    // UPDATE — Handle all touch input
-    // ─────────────────────────────────────────────────────────
+    // AUTO-FRAME: moves camera to fit model regardless of FBX position
+    IEnumerator AutoFrameModel()
+    {
+        yield return null; // wait one frame
+
+        if (modelCamera == null || modelContainer == null) yield break;
+
+        var renderers = modelContainer.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0)
+        {
+            Debug.LogWarning("[3DViewer] No renderers found in modelContainer.");
+            yield break;
+        }
+
+        // Calculate total bounds
+        Bounds bounds = renderers[0].bounds;
+        foreach (var r in renderers)
+            bounds.Encapsulate(r.bounds);
+
+        Vector3 center = bounds.center;
+        float size = bounds.size.magnitude;
+        float fovRad = modelCamera.fieldOfView * Mathf.Deg2Rad;
+        float distance = (size * 0.6f) / Mathf.Tan(fovRad * 0.5f);
+        distance = Mathf.Max(distance, 0.5f);
+
+        // Position camera in front of model
+        modelCamera.transform.position = center + new Vector3(0f, 0f, -distance);
+        modelCamera.transform.LookAt(center);
+
+        // Extend far clip to cover full model
+        modelCamera.farClipPlane = Mathf.Max(distance + size + 50f, 200f);
+
+        rotationX = 0f;
+        rotationY = 0f;
+        currentZoom = 1f;
+        modelContainer.localScale = Vector3.one;
+        modelContainer.localRotation = Quaternion.identity;
+
+        Debug.Log($"[3DViewer] AutoFrame: center={center} size={size:F1} dist={distance:F1}");
+    }
+
     void Update()
     {
         if (modelContainer == null) return;
 
-        // Auto-rotate
         if (autoRotating)
-            modelContainer.Rotate(Vector3.up,
-                autoRotateSpeed * Time.deltaTime, Space.World);
+        {
+            rotationY += autoRotateSpeed * Time.deltaTime;
+            ApplyRotation();
+        }
 
 #if UNITY_EDITOR
-        HandleEditorMouse();
+        HandleMouseInput();
 #else
         HandleTouchInput();
 #endif
     }
 
-    // ── Touch Input ──────────────────────────────────────────
     void HandleTouchInput()
     {
-        int touchCount = Input.touchCount;
+        int count = Input.touchCount;
 
-        // ── TWO FINGERS — Pinch zoom ─────────────────────────
-        if (touchCount == 2)
+        if (count == 2)
         {
             autoRotating = false;
-            wasPinching = true;
-
             Touch t0 = Input.GetTouch(0);
             Touch t1 = Input.GetTouch(1);
-
-            float currentDist = Vector2.Distance(t0.position, t1.position);
+            float dist = Vector2.Distance(t0.position, t1.position);
 
             if (t0.phase == TouchPhase.Began || t1.phase == TouchPhase.Began)
-            {
-                lastPinchDist = currentDist;
-                return;
-            }
+            { lastPinchDist = dist; wasPinching = true; return; }
 
-            float delta = currentDist - lastPinchDist;
-            SetScale(currentScale + delta * zoomSpeed);
-            lastPinchDist = currentDist;
+            SetZoom(currentZoom + (dist - lastPinchDist) * 0.002f);
+            lastPinchDist = dist;
             return;
         }
 
-        // ── ONE FINGER — Rotate or Tap ───────────────────────
-        if (touchCount == 1)
+        if (count == 1)
         {
-            Touch touch = Input.GetTouch(0);
+            Touch t = Input.GetTouch(0);
+            if (IsTouchOverUI(t.position)) return;
 
-            // Check if touch is over UI
-            if (IsTouchOverUI(touch.position)) return;
-
-            switch (touch.phase)
+            switch (t.phase)
             {
                 case TouchPhase.Began:
                     wasPinching = false;
-                    lastSingleTouchPos = touch.position;
+                    lastSinglePos = t.position;
                     touchStartTime = Time.time;
-                    touchStartPos = touch.position;
+                    touchStartPos = t.position;
                     break;
-
                 case TouchPhase.Moved:
                     if (!wasPinching)
                     {
-                        Vector2 delta = touch.position - lastSingleTouchPos;
-                        RotateModel(delta);
-                        lastSingleTouchPos = touch.position;
+                        Vector2 d = t.position - lastSinglePos;
+                        rotationY += d.x * rotationSpeed;
+                        rotationX -= d.y * rotationSpeed;
+                        rotationX = Mathf.Clamp(rotationX, -70f, 70f);
+                        ApplyRotation();
+                        lastSinglePos = t.position;
                         tapHintBubble?.SetActive(false);
                     }
                     break;
-
                 case TouchPhase.Ended:
-                    // Detect tap (short time + small movement)
-                    float duration = Time.time - touchStartTime;
-                    float moved = Vector2.Distance(touch.position, touchStartPos);
-
-                    if (!wasPinching && duration < TAP_MAX_DURATION
-                        && moved < TAP_MAX_MOVE)
-                    {
-                        TrySelectBone(touch.position);
-                    }
+                    if (!wasPinching
+                        && Time.time - touchStartTime < TAP_DURATION
+                        && Vector2.Distance(t.position, touchStartPos) < TAP_MOVE)
+                        TrySelectBone(t.position);
                     wasPinching = false;
                     break;
             }
         }
 
-        if (touchCount == 0)
-            wasPinching = false;
+        if (count == 0) wasPinching = false;
     }
 
-    // ── Editor Mouse (for testing) ───────────────────────────
-    void HandleEditorMouse()
+    void HandleMouseInput()
     {
-        // Right-click drag = rotate
         if (Input.GetMouseButton(1))
         {
-            float mx = Input.GetAxis("Mouse X");
-            float my = Input.GetAxis("Mouse Y");
-            modelContainer.Rotate(Vector3.up, -mx * 150f * Time.deltaTime, Space.World);
-            modelContainer.Rotate(Vector3.right, my * 150f * Time.deltaTime, Space.World);
+            rotationY += Input.GetAxis("Mouse X") * 150f * Time.deltaTime;
+            rotationX -= Input.GetAxis("Mouse Y") * 150f * Time.deltaTime;
+            rotationX = Mathf.Clamp(rotationX, -70f, 70f);
+            ApplyRotation();
         }
-
-        // Scroll = zoom
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > 0.01f)
-            SetScale(currentScale + scroll * 0.5f);
-
-        // Left-click = select bone
-        if (Input.GetMouseButtonDown(0)
-            && !UnityEngine.EventSystems.EventSystem.current
-                .IsPointerOverGameObject())
-        {
+            SetZoom(currentZoom + scroll * 0.5f);
+        if (Input.GetMouseButtonDown(0) && !IsMouseOverUI())
             TrySelectBone(Input.mousePosition);
-        }
     }
 
-    // ── Rotate the model ────────────────────────────────────
-    void RotateModel(Vector2 delta)
+    void ApplyRotation()
     {
-        //modelContainer.Rotate(Vector3.up,
-        //    -delta.x * rotationSpeed, Space.World);
-        //modelContainer.Rotate(Vector3.right,
-        //     delta.y * rotationSpeed, Space.World);
-
-        //added
-        rotationY += -delta.x * rotationSpeed;
-        rotationX += delta.y * rotationSpeed;
-
-        // Clamp vertical rotation — prevents flipping upside down
-        rotationX = Mathf.Clamp(rotationX, -60f, 60f);
-
-        modelContainer.localRotation =
-            Quaternion.Euler(rotationX, rotationY, 0f);
+        if (modelContainer)
+            modelContainer.localRotation =
+                Quaternion.Euler(rotationX, rotationY, 0f);
     }
 
-    // ── Try to select a bone via raycast ────────────────────
+    // BONE SELECTION — converts touch through RawImage to 3D ray
     void TrySelectBone(Vector2 screenPos)
     {
-        //if (modelCamera == null) return;
-
-        //Ray ray = modelCamera.ScreenPointToRay(screenPos);
-
-        //// Draw a debug ray in the Scene view (visible in Editor)
-        //Debug.DrawRay(ray.origin, ray.direction * 10f, Color.red, 2f);
-
-        //if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
-        //{
-        //    Debug.Log($" Hit: {hit.collider.gameObject.name}");
-
-        //    var info = hit.collider.GetComponent<StructureInfo>();
-        //    if (info != null)
-        //    {
-        //        ShowBoneInfo(info);
-        //        return;
-        //    }
-
-        //    // Hit mesh but no StructureInfo — try parent
-        //    var parentInfo = hit.collider
-        //        .GetComponentInParent<StructureInfo>();
-        //    if (parentInfo != null)
-        //        ShowBoneInfo(parentInfo);
-        //}
-        //else
-        //{
-        //    Debug.Log(" Raycast hit nothing!");
-        //    // Tapped empty space — close panel
-        //    if (isBoneInfoOpen) CloseBoneInfo();
-        //}
-
         if (modelCamera == null) return;
 
-        // Convert screen position to RawImage local position
-        RectTransform rawRect = modelRawImage.GetComponent<RectTransform>();
+        Ray ray;
 
-        // Check if touch is inside RawImage bounds
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            rawRect, screenPos,
-            null, out Vector2 localPoint))
-            return;
-
-        // Convert local point to 0-1 UV coordinates
-        Rect rect = rawRect.rect;
-        float u = (localPoint.x - rect.x) / rect.width;
-        float v = (localPoint.y - rect.y) / rect.height;
-
-        // Clamp to valid range
-        if (u < 0 || u > 1 || v < 0 || v > 1) return;
-
-        // Create ray from Second Camera using UV coordinates
-        Ray ray = modelCamera.ViewportPointToRay(new Vector3(u, v, 0f));
-
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity,
-            LayerMask.GetMask("SkeletonModel")))
+        if (modelRawImage != null)
         {
+            // Convert screen position to UV inside RawImage
+            RectTransform rt = modelRawImage.rectTransform;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    rt, screenPos, null, out Vector2 local))
+            {
+                Debug.Log("[3DViewer] Touch outside RawImage.");
+                return;
+            }
+
+            Rect rect = rt.rect;
+            if (local.x < rect.xMin || local.x > rect.xMax ||
+                local.y < rect.yMin || local.y > rect.yMax)
+            {
+                if (isBoneInfoOpen) CloseBoneInfo();
+                return;
+            }
+
+            float u = (local.x - rect.xMin) / rect.width;
+            float v = (local.y - rect.yMin) / rect.height;
+            ray = modelCamera.ViewportPointToRay(new Vector3(u, v, 0f));
+            Debug.Log($"[3DViewer] UV Ray: ({u:F2}, {v:F2})");
+        }
+        else
+        {
+            // Fallback if RawImage not assigned
+            ray = modelCamera.ScreenPointToRay(screenPos);
+            Debug.Log("[3DViewer] Direct screen ray (assign RawImage for accuracy)");
+        }
+
+        // Layer mask
+        int mask = LayerMask.GetMask("SkeletonModel");
+        if (mask == 0)
+        {
+            Debug.LogWarning("[3DViewer] SkeletonModel layer missing! Using all layers.");
+            mask = ~0;
+        }
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 5000f, mask))
+        {
+            Debug.Log($"[3DViewer] HIT: {hit.collider.name}");
             var info = hit.collider.GetComponent<StructureInfo>()
                     ?? hit.collider.GetComponentInParent<StructureInfo>();
             if (info != null)
                 ShowBoneInfo(info);
+            else
+                Debug.Log($"[3DViewer] No StructureInfo on {hit.collider.name}. Run Auto Setup.");
         }
         else
         {
+            Debug.Log("[3DViewer] No hit.");
             if (isBoneInfoOpen) CloseBoneInfo();
         }
     }
 
-    // ── Show Bone Info Panel ─────────────────────────────────
     void ShowBoneInfo(StructureInfo info)
     {
+        if (boneInfoPanel == null) return;
         boneNameText.text = info.structureName;
         boneDescText.text = info.description;
-
-        // Category tag color
         if (categoryText) categoryText.text = info.category.ToUpper();
-        if (categoryTagBG && categoryColors.ContainsKey(info.category))
-            categoryTagBG.color = categoryColors[info.category];
+        if (categoryTagBG && catColors.ContainsKey(info.category))
+            categoryTagBG.color = catColors[info.category];
 
-        // Slide up animation
         boneInfoPanel.SetActive(true);
         isBoneInfoOpen = true;
-        //StopCoroutine(nameof(SlidePanel));
-        //StartCoroutine(SlidePanel(true));
-
-        //added
         var rect = boneInfoPanel.GetComponent<RectTransform>();
         if (rect) rect.anchoredPosition = Vector2.zero;
-
-
         tapHintBubble?.SetActive(false);
     }
 
     void CloseBoneInfo()
     {
-        StartCoroutine(SlidePanel(false));
+        if (boneInfoPanel) boneInfoPanel.SetActive(false);
         isBoneInfoOpen = false;
     }
 
     void ShowSystemInfo()
     {
         if (currentSystem == null) return;
-        var fakeInfo = new StructureInfo
+        ShowBoneInfo(new StructureInfo
         {
             structureName = currentSystem.systemName,
-            description = $"The {currentSystem.systemName} contains " +
-                            $"{currentSystem.structureCount} anatomical structures. " +
-                            "Tap any bone to learn about it.",
+            description = $"{currentSystem.systemName} has " +
+                            $"{currentSystem.structureCount} structures. " +
+                            "Tap any bone to learn more.",
             category = "Skeletal System"
-        };
-        ShowBoneInfo(fakeInfo);
+        });
     }
 
-    // ── Slide animation for info panel ──────────────────────
-    IEnumerator SlidePanel(bool slideUp)
+    void SetZoom(float z)
     {
-        var rect = boneInfoPanel.GetComponent<RectTransform>();
-        float panelH = rect.rect.height;
-        float start = slideUp ? -panelH : 0f;
-        float end = slideUp ? 0f : -panelH;
-        float elapsed = 0f;
-        float dur = 0.25f;
-
-        if (slideUp) boneInfoPanel.SetActive(true);
-
-        while (elapsed < dur)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / dur);
-            rect.anchoredPosition = new Vector2(0f, Mathf.Lerp(start, end, t));
-            yield return null;
-        }
-
-        rect.anchoredPosition = new Vector2(0f, end);
-        if (!slideUp) boneInfoPanel.SetActive(false);
+        currentZoom = Mathf.Clamp(z, minZoom, maxZoom);
+        if (modelContainer)
+            modelContainer.localScale = Vector3.one * currentZoom;
     }
 
-    // ── Scale (Zoom) ─────────────────────────────────────────
-    void SetScale(float scale)
-    {
-        currentScale = Mathf.Clamp(scale, minScale, maxScale);
-        modelContainer.localScale = Vector3.one * currentScale;
-    }
+    void ZoomIn() => SetZoom(currentZoom + zoomStep);
+    void ZoomOut() => SetZoom(currentZoom - zoomStep);
 
-    void ZoomIn() => SetScale(currentScale + 0.2f);
-    void ZoomOut() => SetScale(currentScale - 0.2f);
-
-    // ── Reset ────────────────────────────────────────────────
     void ResetView()
     {
-        currentScale = 1f;
+        rotationX = rotationY = 0f;
+        currentZoom = 1f;
+        autoRotating = false;
+        UpdateRotateBtnVisual();
         if (modelContainer)
         {
-            modelContainer.localScale = Vector3.one;
             modelContainer.localRotation = Quaternion.identity;
-            modelContainer.localPosition = Vector3.zero;
+            modelContainer.localScale = Vector3.one;
         }
+        if (modelContainer != null) StartCoroutine(AutoFrameModel());
         CloseBoneInfo();
-        autoRotating = false;
-        UpdateRotateBtnColor();
     }
 
-    // ── Auto Rotate ──────────────────────────────────────────
     void ToggleAutoRotate()
     {
         autoRotating = !autoRotating;
-        UpdateRotateBtnColor();
+        UpdateRotateBtnVisual();
     }
 
-    void UpdateRotateBtnColor()
+    void UpdateRotateBtnVisual()
     {
         if (rotateBtnBG)
             rotateBtnBG.color = autoRotating
-                ? new Color(0.49f, 0.23f, 0.93f, 0.3f) // purple tint = ON
-                : new Color(1f, 1f, 1f, 0f);            // transparent = OFF
+                ? new Color(0.49f, 0.23f, 0.93f, 0.35f)
+                : new Color(1f, 1f, 1f, 0f);
     }
 
-    // ── Fullscreen ───────────────────────────────────────────
-    void ToggleFullscreen()
+    void ToggleFullscreen() => tapHintBubble?.SetActive(false);
+
+    bool IsTouchOverUI(Vector2 pos)
     {
-        isFullscreen = !isFullscreen;
-        tapHintBubble?.SetActive(!isFullscreen);
+        var pe = new UnityEngine.EventSystems.PointerEventData(
+            UnityEngine.EventSystems.EventSystem.current)
+        { position = pos };
+        var results = new List<UnityEngine.EventSystems.RaycastResult>();
+        UnityEngine.EventSystems.EventSystem.current.RaycastAll(pe, results);
+        foreach (var r in results)
+            if (r.gameObject.GetComponent<RawImage>() == null) return true;
+        return false;
     }
 
-    // ── UI touch check ───────────────────────────────────────
-    bool IsTouchOverUI(Vector2 screenPos)
-    {
-        var pointer = new UnityEngine.EventSystems
-            .PointerEventData(UnityEngine.EventSystems.EventSystem.current)
-        { position = screenPos };
-        var results = new System.Collections.Generic.List<
-            UnityEngine.EventSystems.RaycastResult>();
-        UnityEngine.EventSystems.EventSystem.current
-            .RaycastAll(pointer, results);
-        return results.Count > 0;
-    }
+    bool IsMouseOverUI() =>
+        UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
     void OnBack()
     {

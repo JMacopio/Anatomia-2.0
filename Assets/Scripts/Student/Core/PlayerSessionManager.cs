@@ -1,4 +1,4 @@
-using Firebase;
+﻿using Firebase;
 using Firebase.Auth;
 using Firebase.Extensions;
 using Firebase.Firestore;
@@ -21,7 +21,7 @@ public class StudentData
     public int badgesTotal = 6;
     public int pointsToNextLevel = 500;
 
-    // Classroom � set when student joins via Join Classroom screen
+    // Classroom — set when student joins via Join Classroom screen
     public string classroomCode = "";
     public string classroomName = "";
 
@@ -135,9 +135,32 @@ public class PlayerSessionManager : MonoBehaviour
     // LOGIN - Email & Password
     public void Login(string email, string password)
     {
+        //if (!isFirebaseReady)
+        //{
+        //    OnLoginFailed?.Invoke("Firebase is not ready. Please try again.");
+        //    return;
+        //}
+
+        //auth.SignInWithEmailAndPasswordAsync(email, password)
+        //    .ContinueWithOnMainThread(task =>
+        //    {
+        //        if (task.IsCanceled || task.IsFaulted)
+        //        {
+        //            string error = GetAuthErrorMessage(task.Exception);
+        //            Debug.LogWarning($"[Firebase] Login failed: {error}");
+        //            OnLoginFailed?.Invoke(error);
+        //            return;
+        //        }
+
+        //        currentUser = task.Result.User;
+        //        isLoggedIn = true;
+        //        Debug.Log($"[Firebase] Logged in: {currentUser.Email}");
+
+        //        LoadStudentDataFromFirestore(currentUser.UserId);
+        //    });
         if (!isFirebaseReady)
         {
-            OnLoginFailed?.Invoke("Firebase is not ready. Please try again.");
+            OnLoginFailed?.Invoke("App not ready. Please try again.");
             return;
         }
 
@@ -147,16 +170,48 @@ public class PlayerSessionManager : MonoBehaviour
                 if (task.IsCanceled || task.IsFaulted)
                 {
                     string error = GetAuthErrorMessage(task.Exception);
-                    Debug.LogWarning($"[Firebase] Login failed: {error}");
                     OnLoginFailed?.Invoke(error);
                     return;
                 }
 
                 currentUser = task.Result.User;
-                isLoggedIn = true;
-                Debug.Log($"[Firebase] Logged in: {currentUser.Email}");
 
-                LoadStudentDataFromFirestore(currentUser.UserId);
+                // Check role BEFORE loading student data
+                CheckStudentRole(currentUser.UserId);
+            });
+    }
+
+    void CheckStudentRole(string uid)
+    {
+        // Check if this UID exists in the admins collection
+        db.Collection("admins").Document(uid)
+            .GetSnapshotAsync()
+            .ContinueWithOnMainThread(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    // Can't verify — proceed as student (fail open)
+                    Debug.LogWarning("[Session] Role check failed, proceeding as student.");
+                    isLoggedIn = true;
+                    LoadStudentDataFromFirestore(uid);
+                    return;
+                }
+
+                if (task.Result.Exists)
+                {
+                    // ❌ ADMIN trying to use student login — BLOCK
+                    auth.SignOut();
+                    currentUser = null;
+                    isLoggedIn = false;
+                    OnLoginFailed?.Invoke(
+                        "This is an admin account.\nPlease use Admin Login.");
+                    Debug.LogWarning("[Session] Admin blocked from student login.");
+                    return;
+                }
+
+                // ✅ Not an admin — safe to log in as student
+                isLoggedIn = true;
+                LoadStudentDataFromFirestore(uid);
             });
     }
 
@@ -181,12 +236,12 @@ public class PlayerSessionManager : MonoBehaviour
 
                 if (task.Result.Exists)
                 {
-                    // Existing user � load their data normally
+                    // Existing user — load their data normally
                     LoadStudentDataFromFirestore(uid);
                 }
                 else
                 {
-                    // New Google user � create their profile
+                    // New Google user — create their profile
                     studentData = new StudentData();
                     studentData.studentName = displayName;
                     studentData.email = email;

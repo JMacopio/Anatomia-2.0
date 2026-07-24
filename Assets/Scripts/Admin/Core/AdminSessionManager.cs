@@ -204,25 +204,64 @@ public class AdminSessionManager : MonoBehaviour
     // ── Verify the user has admin role in Firestore ──────────
     void VerifyAdminRole(string uid)
     {
-        db.Collection("admins").Document(uid).GetSnapshotAsync()
+        //db.Collection("admins").Document(uid).GetSnapshotAsync()
+        //    .ContinueWithOnMainThread(task =>
+        //    {
+        //        if (task.IsFaulted || !task.Result.Exists)
+        //        {
+        //            auth.SignOut();
+        //            OnAdminLoginFailed?.Invoke("Access denied. Admin account required.");
+        //            return;
+        //        }
+        //        var snap = task.Result;
+        //        adminData.adminName = snap.ContainsField("name") ? snap.GetValue<string>("name") : "Admin";
+        //        adminData.email = snap.ContainsField("email") ? snap.GetValue<string>("email") : currentAdmin.Email;
+        //        adminData.role = snap.ContainsField("role") ? snap.GetValue<string>("role") : "admin";
+
+        //        isLoggedIn = true;
+        //        LoadAllData();
+
+        //        //Added
+        //        OnAdminLoginSuccess?.Invoke();
+        //    });
+
+        db.Collection("admins").Document(uid)
+            .GetSnapshotAsync()
             .ContinueWithOnMainThread(task =>
             {
-                if (task.IsFaulted || !task.Result.Exists)
+                if (task.IsFaulted)
                 {
                     auth.SignOut();
-                    OnAdminLoginFailed?.Invoke("Access denied. Admin account required.");
+                    OnAdminLoginFailed?.Invoke(
+                        "Verification failed. Please try again.");
                     return;
                 }
+
+                if (!task.Result.Exists)
+                {
+                    // Student trying admin login — BLOCK
+                    auth.SignOut();
+                    currentAdmin = null;
+                    isLoggedIn = false;
+                    OnAdminLoginFailed?.Invoke(
+                        "This is a student account.\nPlease use Student Login.");
+                    Debug.LogWarning("[AdminSession] Student blocked from admin login.");
+                    return;
+                }
+
+                // Confirmed admin — proceed
                 var snap = task.Result;
-                adminData.adminName = snap.ContainsField("name") ? snap.GetValue<string>("name") : "Admin";
-                adminData.email = snap.ContainsField("email") ? snap.GetValue<string>("email") : currentAdmin.Email;
-                adminData.role = snap.ContainsField("role") ? snap.GetValue<string>("role") : "admin";
+                adminData.adminName = snap.ContainsField("name")
+                    ? snap.GetValue<string>("name") : "Admin";
+                adminData.email = snap.ContainsField("email")
+                    ? snap.GetValue<string>("email") : currentAdmin.Email;
+                adminData.role = snap.ContainsField("role")
+                    ? snap.GetValue<string>("role") : "admin";
 
                 isLoggedIn = true;
                 LoadAllData();
-
-                //Added
                 OnAdminLoginSuccess?.Invoke();
+                Debug.Log($"[AdminSession] Admin verified: {adminData.adminName}");
             });
     }
 
