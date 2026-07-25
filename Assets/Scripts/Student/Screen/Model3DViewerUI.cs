@@ -100,6 +100,8 @@ public class Model3DViewerUI : MonoBehaviour
     }
 
     // AUTO-FRAME: moves camera to fit model regardless of FBX position
+    //IEnumerator AutoFrameModel()
+    public IEnumerator AutoFramePublic() => AutoFrameModel();
     IEnumerator AutoFrameModel()
     {
         yield return null; // wait one frame
@@ -303,18 +305,32 @@ public class Model3DViewerUI : MonoBehaviour
     //added
     void ShowBoneInfo(string name, string description, string category)
     {
+        //if (boneInfoPanel == null) return;
+        //boneNameText.text = name;
+        //boneDescText.text = description;
+        //if (categoryText) categoryText.text = category.ToUpper();
+        //if (categoryTagBG && catColors.ContainsKey(category))
+        //    categoryTagBG.color = catColors[category];
+
+        //boneInfoPanel.SetActive(true);
+        //isBoneInfoOpen = true;
+        //var rect = boneInfoPanel.GetComponent<RectTransform>();
+        //if (rect) rect.anchoredPosition = Vector2.zero;
+        //tapHintBubble?.SetActive(false);
         if (boneInfoPanel == null) return;
+
         boneNameText.text = name;
         boneDescText.text = description;
         if (categoryText) categoryText.text = category.ToUpper();
         if (categoryTagBG && catColors.ContainsKey(category))
             categoryTagBG.color = catColors[category];
 
-        boneInfoPanel.SetActive(true);
         isBoneInfoOpen = true;
-        var rect = boneInfoPanel.GetComponent<RectTransform>();
-        if (rect) rect.anchoredPosition = Vector2.zero;
         tapHintBubble?.SetActive(false);
+
+        //Stop any running animation, then slide up
+        StopCoroutine(nameof(SlidePanel));
+        StartCoroutine(SlidePanel(true));
 
     }
 
@@ -339,8 +355,38 @@ public class Model3DViewerUI : MonoBehaviour
 
     void CloseBoneInfo()
     {
-        if (boneInfoPanel) boneInfoPanel.SetActive(false);
-        isBoneInfoOpen = false;
+        //if (boneInfoPanel) boneInfoPanel.SetActive(false);
+        //isBoneInfoOpen = false;
+
+        //Stop any running animation, then slide down
+        StopCoroutine(nameof(SlidePanel));
+        StartCoroutine(SlidePanel(false));
+    }
+
+    // Slide panel up from bottom / slide down off screen
+    IEnumerator SlidePanel(bool slideUp)
+    {
+        if (boneInfoPanel == null) yield break;
+
+        var rect = boneInfoPanel.GetComponent<RectTransform>();
+        float height = rect.rect.height > 0 ? rect.rect.height : 220f;
+        float fromY = slideUp ? -height : 0f;
+        float toY = slideUp ? 0f : -height;
+        float duration = 0.25f;
+        float elapsed = 0f;
+
+        if (slideUp) boneInfoPanel.SetActive(true);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+            rect.anchoredPosition = new Vector2(0f, Mathf.Lerp(fromY, toY, t));
+            yield return null;
+        }
+
+        rect.anchoredPosition = new Vector2(0f, toY);
+        if (!slideUp) boneInfoPanel.SetActive(false);
     }
 
     void ShowSystemInfo()

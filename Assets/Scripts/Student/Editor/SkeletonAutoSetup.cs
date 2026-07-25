@@ -156,9 +156,14 @@ public class SkeletonAutoSetup : EditorWindow
                 else if (smr != null && smr.sharedMesh != null)
                 {
                     // For skinned bones, use local scale as a rough estimate
-                    Vector3 s = t.localScale;
-                    height = Mathf.Max(s.y * 0.5f, 0.05f);
-                    radius = Mathf.Max(Mathf.Max(s.x, s.z) * 0.3f, 0.02f);
+                    //Vector3 s = t.localScale;
+                    //height = Mathf.Max(s.y * 0.5f, 0.05f);
+                    //radius = Mathf.Max(Mathf.Max(s.x, s.z) * 0.3f, 0.02f);
+
+                    // Use actual mesh bounds instead of localScale
+                    Bounds b = smr.sharedMesh.bounds;
+                    height = Mathf.Max(b.size.y, 0.05f);
+                    radius = Mathf.Max(Mathf.Max(b.size.x, b.size.z) * 0.5f, 0.02f);
                 }
                 else
                 {
@@ -199,6 +204,15 @@ public class SkeletonAutoSetup : EditorWindow
                 sphere.radius = radius;
                 sphere.center = Vector3.zero;
             }
+
+            //added
+            // ── Set layer to "SkeletonModel" ─────────────────────── 
+            int skeletonLayer = LayerMask.NameToLayer("SkeletonModel");
+            if (skeletonLayer != -1)
+                t.gameObject.layer = skeletonLayer;
+            else
+                Debug.LogWarning("[SkeletonAutoSetup] 'SkeletonModel' layer not found. " +
+                                 "Create it in Tags & Layers first.");
 
             // ── Add StructureInfo ────────────────────────────────
             var info = t.GetComponent<StructureInfo>();
