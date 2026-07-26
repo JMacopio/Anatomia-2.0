@@ -218,18 +218,44 @@ public class Model3DViewerUI : MonoBehaviour
 
     void HandleMouseInput()
     {
-        if (Input.GetMouseButton(1))
+        // Left mouse button drag = rotate (same as single finger)
+        if (Input.GetMouseButton(0) && !IsMouseOverButton())
         {
             rotationY += Input.GetAxis("Mouse X") * 150f * Time.deltaTime;
             rotationX -= Input.GetAxis("Mouse Y") * 150f * Time.deltaTime;
             rotationX = Mathf.Clamp(rotationX, -70f, 70f);
             ApplyRotation();
         }
+
+        // Scroll = zoom
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > 0.01f)
             SetZoom(currentZoom + scroll * 0.5f);
-        if (Input.GetMouseButtonDown(0) && !IsMouseOverUI())
-            TrySelectBone(Input.mousePosition);
+
+        // Left click (no drag) = select bone
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    Debug.Log("[3DViewer] Mouse clicked at: " + Input.mousePosition);
+        //    bool overUI = IsMouseOverUI();
+        //    Debug.Log("[3DViewer] IsMouseOverUI: " + overUI);
+        //    if (!overUI)
+        //        TrySelectBone(Input.mousePosition);
+        //}
+        // Left click = select bone
+        // We skip the IsMouseOverUI check here because the RawImage
+        // itself counts as UI. TrySelectBone handles out-of-bounds clicks.
+        // Only block clicks on actual buttons (toolbar, back, close)
+        if (Input.GetMouseButtonDown(0))
+        {
+            Debug.Log("[3DViewer] Mouse clicked at: " + Input.mousePosition);
+
+            // Only block if clicking on a Button — not on RawImage or panels
+            bool overButton = IsMouseOverButton();
+            Debug.Log("[3DViewer] IsMouseOverButton: " + overButton);
+
+            if (!overButton)
+                TrySelectBone(Input.mousePosition);
+        }
     }
 
     void ApplyRotation()
@@ -462,8 +488,37 @@ public class Model3DViewerUI : MonoBehaviour
         return false;
     }
 
-    bool IsMouseOverUI() =>
-        UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+    //bool IsMouseOverUI() =>
+    //    UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+    //bool IsMouseOverUI()
+    //{
+    //    // Same as IsTouchOverUI but for mouse — excludes RawImage
+    //    // so clicks on the 3D model view pass through correctly
+    //    var pe = new UnityEngine.EventSystems.PointerEventData(
+    //        UnityEngine.EventSystems.EventSystem.current)
+    //    { position = Input.mousePosition };
+    //    var results = new List<UnityEngine.EventSystems.RaycastResult>();
+    //    UnityEngine.EventSystems.EventSystem.current.RaycastAll(pe, results);
+    //    foreach (var r in results)
+    //        if (r.gameObject.GetComponent<RawImage>() == null) return true;
+    //    return false;
+    //}
+    // Checks only for Buttons — allows clicks through panels and RawImage
+    bool IsMouseOverButton()
+    {
+        var pe = new UnityEngine.EventSystems.PointerEventData(
+            UnityEngine.EventSystems.EventSystem.current)
+        { position = Input.mousePosition };
+        var results = new List<UnityEngine.EventSystems.RaycastResult>();
+        UnityEngine.EventSystems.EventSystem.current.RaycastAll(pe, results);
+        foreach (var r in results)
+        {
+            // Block if clicking an actual interactable button
+            var btn = r.gameObject.GetComponent<UnityEngine.UI.Button>();
+            if (btn != null && btn.interactable) return true;
+        }
+        return false;
+    }
 
     void OnBack()
     {
