@@ -71,6 +71,8 @@ public class Model3DViewerUI : MonoBehaviour
         { "Skeletal System",  new Color(0.49f, 0.23f, 0.93f) },
     };
 
+    private Coroutine slidePanelCoroutine;
+
     void Start()
     {
         backBtn.onClick.AddListener(OnBack);
@@ -355,8 +357,11 @@ public class Model3DViewerUI : MonoBehaviour
         tapHintBubble?.SetActive(false);
 
         //Stop any running animation, then slide up
-        StopCoroutine(nameof(SlidePanel));
-        StartCoroutine(SlidePanel(true));
+        //StopCoroutine(nameof(SlidePanel));
+        //StartCoroutine(SlidePanel(true));
+        // FIXED — stop using string, use reference instead
+        if (slidePanelCoroutine != null) StopCoroutine(slidePanelCoroutine);
+        slidePanelCoroutine = StartCoroutine(SlidePanel(true));
 
     }
 
@@ -385,8 +390,15 @@ public class Model3DViewerUI : MonoBehaviour
         //isBoneInfoOpen = false;
 
         //Stop any running animation, then slide down
-        StopCoroutine(nameof(SlidePanel));
-        StartCoroutine(SlidePanel(false));
+        //StopCoroutine(nameof(SlidePanel));
+        //StartCoroutine(SlidePanel(false));
+
+        if (!isBoneInfoOpen) return;  // prevent double-close
+        isBoneInfoOpen = false;       // set false immediately
+
+        // FIXED — stop using string, use reference instead
+        if (slidePanelCoroutine != null) StopCoroutine(slidePanelCoroutine);
+        slidePanelCoroutine = StartCoroutine(SlidePanel(false));
     }
 
     // Slide panel up from bottom / slide down off screen
@@ -396,8 +408,14 @@ public class Model3DViewerUI : MonoBehaviour
 
         var rect = boneInfoPanel.GetComponent<RectTransform>();
         float height = rect.rect.height > 0 ? rect.rect.height : 220f;
-        float fromY = slideUp ? -height : 0f;
-        float toY = slideUp ? 0f : -height;
+        //float fromY = slideUp ? -height : 0f;
+        //float toY = slideUp ? 0f : -height;
+
+        // NEW — uses panel's designed Y position (233)
+        float targetY = 233f;  // match the Inspector value
+        float fromY = slideUp ? -(height + targetY) : targetY;
+        float toY = slideUp ? targetY : -(height + targetY);
+
         float duration = 0.25f;
         float elapsed = 0f;
 
