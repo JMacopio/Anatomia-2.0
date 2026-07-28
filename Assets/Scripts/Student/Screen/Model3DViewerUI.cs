@@ -8,6 +8,16 @@ using UnityEngine.UI;
 
 public class Model3DViewerUI : MonoBehaviour
 {
+    [Header("3D Models — add one per anatomy system")]
+    public GameObject skeletalModel;    
+    public GameObject muscularModel;
+
+    [Header("Highlight Settings")]
+    public Material highlightMaterial;      // drag your glow material here
+    public Color highlightColor = new Color(0.4f, 0.8f, 1.0f, 1f); // cyan-blue glow
+    public float highlightIntensity = 2.5f; // emission intensity
+    public bool pulseHighlight = true;  // animate the glow
+
     [Header("Header")]
     public Button backBtn;
     public TMP_Text systemTitleText;
@@ -73,8 +83,14 @@ public class Model3DViewerUI : MonoBehaviour
 
     private Coroutine slidePanelCoroutine;
 
+    private Renderer highlightedRenderer;
+    private Material[] originalMaterials;
+    private Material runtimeHighlightMat; // created at runtime
+    private Coroutine pulseCoroutine;
+
     void Start()
     {
+        InitHighlightMaterial();
         backBtn.onClick.AddListener(OnBack);
         closeInfoBtn.onClick.AddListener(CloseBoneInfo);
         resetBtn.onClick.AddListener(ResetView);
@@ -92,10 +108,33 @@ public class Model3DViewerUI : MonoBehaviour
     {
         currentSystem = system;
         systemTitleText.text = system.systemName;
+
+        //added this part and switch statement to show correct model based on system name
+        // Hide all models first
+        if (skeletalModel) skeletalModel.SetActive(false);
+        if (muscularModel) muscularModel.SetActive(false);
+
+        // Show correct model based on system name
+        switch (system.systemName)
+        {
+            case "Skeletal System":
+                if (skeletalModel) skeletalModel.SetActive(true);
+                break;
+            case "Muscular System":
+                if (muscularModel) muscularModel.SetActive(true);
+                break;
+            default:
+                // Fallback — show skeletal
+                if (skeletalModel) skeletalModel.SetActive(true);
+                break;
+        }
+
         if (boneInfoPanel) boneInfoPanel.SetActive(false);
         isBoneInfoOpen = false;
+        
         if (modelContainer != null && gameObject.activeInHierarchy) //added && gameObject.activeInHierarchy
             StartCoroutine(AutoFrameModel());
+        
         tapHintBubble?.SetActive(true);
         if (gameObject.activeInHierarchy) //added this if (gameObject.activeInHierarchy)
             StartCoroutine(HideHintAfter(4f));
@@ -319,7 +358,10 @@ public class Model3DViewerUI : MonoBehaviour
             var info = hit.collider.GetComponent<StructureInfo>()
                     ?? hit.collider.GetComponentInParent<StructureInfo>();
             if (info != null)
-                ShowBoneInfo(info);
+                //ShowBoneInfo(info);
+                ShowBoneInfo(info, hit);           // for sphereHit
+                //ShowBoneInfo(info, rayHit);        // for rayHit
+                //ShowBoneInfo(info, bigSphereHit);  // for bigSphereHit
             else
                 Debug.Log($"[3DViewer] No StructureInfo on {hit.collider.name}. Run Auto Setup.");
         }
@@ -365,7 +407,7 @@ public class Model3DViewerUI : MonoBehaviour
 
     }
 
-    void ShowBoneInfo(StructureInfo info)
+    void ShowBoneInfo(StructureInfo info, RaycastHit hit)
     {
         //if (boneInfoPanel == null) return;
         //boneNameText.text = info.structureName;
@@ -381,6 +423,9 @@ public class Model3DViewerUI : MonoBehaviour
         //tapHintBubble?.SetActive(false);
 
         ShowBoneInfo(info.structureName, info.description, info.category);
+
+        // ── Highlight the tapped bone ─────────────────────────
+        HighlightBone(hit);
     }
 
 
@@ -395,6 +440,9 @@ public class Model3DViewerUI : MonoBehaviour
 
         if (!isBoneInfoOpen) return;  // prevent double-close
         isBoneInfoOpen = false;       // set false immediately
+
+        // ── Restore bone to original appearance ──────────────
+        RestoreHighlight();
 
         // FIXED — stop using string, use reference instead
         if (slidePanelCoroutine != null) StopCoroutine(slidePanelCoroutine);
@@ -549,5 +597,128 @@ public class Model3DViewerUI : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         tapHintBubble?.SetActive(false);
+    }
+
+    // Creates the highlight material at runtime if none is assigned
+    void InitHighlightMaterial()
+    {
+        if (highlightMaterial != null)
+        {
+            // Use assigned material as base
+            runtimeHighlightMat = new Material(highlightMaterial);
+        }
+        else
+        {
+            // Create a simple URP Lit material with emission
+            runtimeHighlightMat = new Material(
+                Shader.Find("Universal Render Pipeline/Lit"));
+
+            if (runtimeHighlightMat == null)
+            {
+                // Fallback to standard if URP not found
+                runtimeHighlightMat = new Material(
+                    Shader.Find("Standard"));
+            }
+        }
+
+        // Enable emission
+        runtimeHighlightMat.EnableKeyword("_EMISSION");
+        runtimeHighlightMat.SetColor("_BaseColor", highlightColor);
+        runtimeHighlightMat.SetColor("_Color", highlightColor);
+        runtimeHighlightMat.SetColor("_EmissionColor",
+            highlightColor * highlightIntensity);
+        runtimeHighlightMat.SetFloat("_Smoothness", 0.8f);
+        runtimeHighlightMat.SetFloat("_Metallic", 0.2f);
+    }
+
+    // Highlights the bone that was hit by the raycast
+    void HighlightBone(RaycastHit hit)
+    {
+        // Restore any previously highlighted bone first
+        RestoreHighlight();
+
+        // Get the renderer from the hit collider or its parent
+        Renderer rend = hit.collider.GetComponent<Renderer>()
+                     ?? hit.collider.GetComponentInParent<Renderer>();
+
+        if (rend == null) return;
+
+        // Save original materials so we can restore them later
+        highlightedRenderer = rend;
+        originalMaterials = rend.sharedMaterials;
+
+        // Apply highlight material to all material slots
+        Material[] highlighted = new Material[rend.sharedMaterials.Length];
+        for (int i = 0; i < highlighted.Length; i++)
+            highlighted[i] = runtimeHighlightMat;
+        rend.materials = highlighted;
+
+        // Start pulse animation if enabled
+        if (pulseHighlight)
+        {
+            if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
+            pulseCoroutine = StartCoroutine(PulseHighlight());
+        }
+    }
+
+
+    // Restores the bone to its original materials
+    void RestoreHighlight()
+    {
+        // Stop pulse animation
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+
+        // Restore original materials
+        if (highlightedRenderer != null && originalMaterials != null)
+        {
+            highlightedRenderer.sharedMaterials = originalMaterials;
+            highlightedRenderer = null;
+            originalMaterials = null;
+        }
+    }
+
+
+    // Animates the highlight emission to pulse/glow in and out
+    IEnumerator PulseHighlight()
+    {
+        float time = 0f;
+        float speed = 2f; // pulse speed
+
+        while (true)
+        {
+            time += Time.deltaTime * speed;
+
+            // Oscillate intensity between base and boosted
+            float t = (Mathf.Sin(time) + 1f) * 0.5f;
+            float intensity = Mathf.Lerp(1.5f, highlightIntensity, t);
+
+            if (runtimeHighlightMat != null)
+            {
+                runtimeHighlightMat.SetColor("_EmissionColor",
+                    highlightColor * intensity);
+            }
+
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Returns true if a 3D model is assigned for the given system
+    /// </summary>
+    public bool HasModelForSystem(string systemName)
+    {
+        return systemName switch
+        {
+            "Skeletal System" => skeletalModel != null,
+            "Muscular System" => muscularModel != null,
+            // Add more as you build them:
+            // "Cardiovascular System" => cardiovascularModel != null,
+            // "Respiratory System"    => respiratoryModel    != null,
+            _ => false
+        };
     }
 }

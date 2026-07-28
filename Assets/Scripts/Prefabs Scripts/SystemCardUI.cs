@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,7 +16,10 @@ public class SystemCardUI : MonoBehaviour
     private System.Action<AnatomySystemData> onSelectCallback;
     private AnatomySystemData systemData;
 
-    public void Setup(AnatomySystemData data, System.Action<AnatomySystemData> callback)
+    public GameObject lockIcon;      // 🔒 icon — shown when no model
+    public GameObject comingSoonTag; // "Coming Soon" tag
+
+    public void Setup(AnatomySystemData data, System.Action<AnatomySystemData> callback, bool isAvailable = true)
     {
         systemData = data;
         onSelectCallback = callback;
@@ -28,8 +31,17 @@ public class SystemCardUI : MonoBehaviour
 
         // Apply theme color to icon background and progress bar fill
         iconBackground.color = data.themeColor;
-        ColorBlock cb = progressBar.colors;
+        //ColorBlock cb = progressBar.colors;
         progressBar.fillRect.GetComponent<Image>().color = data.themeColor;
+
+        // ── Show lock if not available ────────────────────────
+        if (lockIcon != null) lockIcon.SetActive(!isAvailable);
+        if (comingSoonTag != null) comingSoonTag.SetActive(!isAvailable);
+
+        // Dim the card if no model available
+        var canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup != null)
+            canvasGroup.alpha = isAvailable ? 1f : 0.5f;
 
         cardButton.onClick.AddListener(() => onSelectCallback?.Invoke(systemData));
     }
