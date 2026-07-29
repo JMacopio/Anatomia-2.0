@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class HighlightMaterialFactory : MonoBehaviour
+public static class HighlightMaterialFactory
 {
     /// <summary>
     /// Creates a URP emissive highlight material at runtime
@@ -47,9 +47,9 @@ public class HighlightMaterialFactory : MonoBehaviour
             "Skeletal System" => new Color(0.4f, 0.8f, 1.0f), // cyan-blue
             "Muscular System" => new Color(1.0f, 0.4f, 0.2f), // red-orange
             "Cardiovascular System" => new Color(1.0f, 0.2f, 0.3f), // red
-            "Respiratory System" => new Color(0.4f, 0.9f, 0.6f), // green
-            "Nervous System" => new Color(0.9f, 0.9f, 0.2f), // yellow
-            "Digestive System" => new Color(0.8f, 0.5f, 0.2f), // amber
+            //"Respiratory System" => new Color(0.4f, 0.9f, 0.6f), // green
+            //"Nervous System" => new Color(0.9f, 0.9f, 0.2f), // yellow
+            //"Digestive System" => new Color(0.8f, 0.5f, 0.2f), // amber
             _ => new Color(0.4f, 0.8f, 1.0f), // default cyan
         };
     }

@@ -516,6 +516,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8871470704968299246}
   - component: {fileID: 230711524561648423}
+  - component: {fileID: -7504036777918051235}
   m_Layer: 5
   m_Name: SystemCardPrefab
   m_TagString: Untagged
@@ -562,6 +563,28 @@ MonoBehaviour:
   progressBar: {fileID: 153241062814906175}
   progressText: {fileID: 933279761887808985}
   cardButton: {fileID: 6993422653939077761}
+  lockIcon: {fileID: 0}
+  comingSoonTag: {fileID: 0}
+--- !u!114 &-7504036777918051235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3731504730163769081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: 90
+  m_PreferredWidth: -1
+  m_PreferredHeight: 90
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &4217817129077328245
 GameObject:
   m_ObjectHideFlags: 0

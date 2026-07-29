@@ -18,7 +18,7 @@ public class AnatomySystemsUI : MonoBehaviour
     {
         new AnatomySystemData("Skeletal System",   206, 0.75f, new Color(0.2f, 0.4f, 0.9f),  "bone_icon"),
         new AnatomySystemData("Muscular System",   640, 0.45f, new Color(0.9f, 0.2f, 0.2f),  "heart_icon"),
-        //new AnatomySystemData("Cardiovascular System", 124, 0.30f, new Color(0.8f, 0.2f, 0.7f), "pulse_icon"),
+        new AnatomySystemData("Cardiovascular System", 124, 0.30f, new Color(0.8f, 0.2f, 0.7f), "pulse_icon"),
         //new AnatomySystemData("Respiratory System",  42, 0.55f, new Color(0.1f, 0.7f, 0.8f), "wind_icon"),
         //new AnatomySystemData("Nervous System",     100, 0.20f, new Color(0.4f, 0.3f, 0.9f), "brain_icon"),
         //new AnatomySystemData("Digestive System",    50, 0.10f, new Color(0.2f, 0.7f, 0.3f), "stomach_icon"),
@@ -49,6 +49,16 @@ public class AnatomySystemsUI : MonoBehaviour
 
             ui?.Setup(system, OnSystemSelected, available);
         }
+
+        //foreach (Transform child in systemsListParent)
+        //    Destroy(child.gameObject);
+
+        //foreach (var system in systems)
+        //{
+        //    var card = Instantiate(systemCardPrefab, systemsListParent);
+        //    var ui = card.GetComponent<SystemCardUI>();
+        //    ui?.Setup(system, OnSystemSelected); // show ALL systems
+        //}
     }
 
     void OnSystemSelected(AnatomySystemData system)
@@ -74,7 +84,7 @@ public class AnatomySystemsUI : MonoBehaviour
         // Simple dialog — replace with your own popup panel
         Debug.Log($"[Learn] {systemName} 3D model coming soon!");
         // OR: show a popup panel
-        // comingSoonPanel.SetActive(true);
+        //comingSoonPanel.SetActive(true);
         // comingSoonText.text = $"{systemName}\n3D Model Coming Soon";
     }
 }

@@ -109,6 +109,11 @@ public class Model3DViewerUI : MonoBehaviour
         currentSystem = system;
         systemTitleText.text = system.systemName;
 
+        // ── Swap highlight color per system ─────────────────── added
+        highlightColor = HighlightMaterialFactory
+            .GetSystemColor(system.systemName);
+        InitHighlightMaterial(); // recreate material with new color
+
         //added this part and switch statement to show correct model based on system name
         // Hide all models first
         if (skeletalModel) skeletalModel.SetActive(false);
@@ -128,6 +133,9 @@ public class Model3DViewerUI : MonoBehaviour
                 if (skeletalModel) skeletalModel.SetActive(true);
                 break;
         }
+
+        // ── Reset state ───────────────────────────────────────
+        RestoreHighlight(); //added
 
         if (boneInfoPanel) boneInfoPanel.SetActive(false);
         isBoneInfoOpen = false;
