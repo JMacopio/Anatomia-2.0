@@ -106,6 +106,7 @@ public class Model3DViewerUI : MonoBehaviour
 
     public void LoadSystem(AnatomySystemData system)
     {
+        Debug.Log($"[Model3DViewer] Comparing: '{system.systemName}' == 'Muscular System'? {system.systemName == "Muscular System"}");
         currentSystem = system;
         systemTitleText.text = system.systemName;
 
@@ -123,13 +124,16 @@ public class Model3DViewerUI : MonoBehaviour
         switch (system.systemName)
         {
             case "Skeletal System":
+                Debug.Log("[Model3DViewer] → Skeletal case");
                 if (skeletalModel) skeletalModel.SetActive(true);
                 break;
             case "Muscular System":
+                Debug.Log("[Model3DViewer] → Muscular case");
                 if (muscularModel) muscularModel.SetActive(true);
                 break;
             default:
                 // Fallback — show skeletal
+                Debug.Log($"[Model3DViewer] → Default case! systemName = '{system.systemName}'");
                 if (skeletalModel) skeletalModel.SetActive(true);
                 break;
         }
