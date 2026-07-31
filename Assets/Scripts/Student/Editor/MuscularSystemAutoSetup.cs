@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// MUSCULAR SYSTEM AUTO SETUP — Anatomia 3D
-/// Adds MeshCollider + StructureInfo to every muscle mesh.
-/// Mirrors SkeletonAutoSetup for consistency.
-/// </summary>
+// MUSCULAR SYSTEM AUTO SETUP — Anatomia 3D
+// Adds MeshCollider + StructureInfo to every muscle mesh.
+// Mirrors SkeletonAutoSetup
+
 public class MuscularSystemAutoSetup : EditorWindow
 {
     private GameObject muscularRoot;

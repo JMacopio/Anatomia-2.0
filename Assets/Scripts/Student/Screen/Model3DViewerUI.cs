@@ -11,6 +11,7 @@ public class Model3DViewerUI : MonoBehaviour
     [Header("3D Models — add one per anatomy system")]
     public GameObject skeletalModel;    
     public GameObject muscularModel;
+    public GameObject cardiovascularModel;
 
     [Header("Highlight Settings")]
     public Material highlightMaterial;      // drag your glow material here
@@ -119,6 +120,7 @@ public class Model3DViewerUI : MonoBehaviour
         // Hide all models first
         if (skeletalModel) skeletalModel.SetActive(false);
         if (muscularModel) muscularModel.SetActive(false);
+        if (cardiovascularModel) cardiovascularModel.SetActive(false);
 
         // Show correct model based on system name
         switch (system.systemName)
@@ -130,6 +132,10 @@ public class Model3DViewerUI : MonoBehaviour
             case "Muscular System":
                 Debug.Log("[Model3DViewer] → Muscular case");
                 if (muscularModel) muscularModel.SetActive(true);
+                break;
+            case "Cardiovascular System":
+                Debug.Log("[Model3DViewer] → Cardiovascular case");
+                if (cardiovascularModel) cardiovascularModel.SetActive(true);
                 break;
             default:
                 // Fallback — show skeletal
@@ -727,9 +733,7 @@ public class Model3DViewerUI : MonoBehaviour
         {
             "Skeletal System" => skeletalModel != null,
             "Muscular System" => muscularModel != null,
-            // Add more as you build them:
-            // "Cardiovascular System" => cardiovascularModel != null,
-            // "Respiratory System"    => respiratoryModel    != null,
+            "Cardiovascular System" => cardiovascularModel != null,
             _ => false
         };
     }
