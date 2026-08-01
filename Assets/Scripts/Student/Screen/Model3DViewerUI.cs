@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class Model3DViewerUI : MonoBehaviour
 {
     [Header("3D Models — add one per anatomy system")]
-    public GameObject skeletalModel;    
+    public GameObject skeletalModel;
     public GameObject muscularModel;
     public GameObject cardiovascularModel;
 
@@ -57,7 +57,7 @@ public class Model3DViewerUI : MonoBehaviour
 
     //added for auto-zoom when click or press
     [Header("Auto Zoom Settings")]
-    public float zoomInFOV = 30f;   // FOV when zoomed in (smaller = closer)
+    public float zoomInFOV = 35f;   // FOV when zoomed in (smaller = closer) 30f
     public float zoomOutFOV = 60f;   // FOV when zoomed out (default)
     public float zoomDuration = 0.5f;  // seconds to complete zoom
     public float zoomInDistance = 0.4f;  // how much to move camera toward bone (0-1)
@@ -76,6 +76,9 @@ public class Model3DViewerUI : MonoBehaviour
     private Vector2 touchStartPos;
     private const float TAP_DURATION = 0.25f;
     private const float TAP_MOVE = 15f;
+    //added
+    private Vector2 lastTwoFingerCenter;
+    private bool wasPanning = false;
 
     private static readonly Dictionary<string, Color> catColors =
         new Dictionary<string, Color>
@@ -98,22 +101,24 @@ public class Model3DViewerUI : MonoBehaviour
 
     // Private zoom state
     private Vector3 originalCameraPos;
+    private Quaternion originalCameraRot;
     private float originalFOV;
     private Vector3 zoomedCameraPos;
     private bool isZoomed = false;
-    private Coroutine zoomCoroutine;
+    private Coroutine zoomCoroutine = null;
+
 
     void Start()
     {
         InitHighlightMaterial();
         originalCameraPos = modelCamera.transform.position;
-        originalFOV       = modelCamera.fieldOfView;
-        zoomOutFOV        = originalFOV;
+        originalFOV = modelCamera.fieldOfView;
+        zoomOutFOV = originalFOV;
 
         backBtn.onClick.AddListener(OnBack);
         closeInfoBtn.onClick.AddListener(CloseBoneInfo);
         resetBtn.onClick.AddListener(ResetView);
-        zoomInBtn.onClick.AddListener(ZoomIn);
+        zoomInBtn.onClick.AddListener(ZoomIntab);
         zoomOutBtn.onClick.AddListener(ZoomOuttab);
         rotateBtn.onClick.AddListener(ToggleAutoRotate);
         infoBtn?.onClick.AddListener(ShowSystemInfo);
@@ -125,7 +130,7 @@ public class Model3DViewerUI : MonoBehaviour
 
     public void LoadSystem(AnatomySystemData system)
     {
-        Debug.Log($"[Model3DViewer] Comparing: '{system.systemName}' == 'Muscular System'? {system.systemName == "Muscular System"}");
+        Debug.Log($"[Model3DViewer] AFTER SWITCH — skeletal active: {skeletalModel.activeSelf}, muscular active: {muscularModel.activeSelf}, cardiovascular active: {cardiovascularModel.activeSelf}");
         currentSystem = system;
         systemTitleText.text = system.systemName;
 
@@ -167,7 +172,7 @@ public class Model3DViewerUI : MonoBehaviour
 
         if (boneInfoPanel) boneInfoPanel.SetActive(false);
         isBoneInfoOpen = false;
-        
+
         if (modelContainer != null && gameObject.activeInHierarchy) //added && gameObject.activeInHierarchy
             StartCoroutine(AutoFrameModel());
 
@@ -223,6 +228,21 @@ public class Model3DViewerUI : MonoBehaviour
         modelContainer.localRotation = Quaternion.identity;
 
         Debug.Log($"[3DViewer] AutoFrame: center={center} size={size:F1} dist={distance:F1}");
+
+        // ── Wait one more frame then save home ───────────────────
+        yield return null;
+        SaveCameraHome(); // ← CRITICAL: save AFTER camera is fully positioned
+    }
+
+    //added this method to save the camera's original position and FOV for zooming back out
+    void SaveCameraHome()
+    {
+        if (modelCamera == null) return;
+        originalCameraPos = modelCamera.transform.position;
+        originalCameraRot = modelCamera.transform.rotation;
+        originalFOV = modelCamera.fieldOfView;
+        isZoomed = false;
+        Debug.Log($"[3DViewer] Camera home saved: pos={originalCameraPos} FOV={originalFOV}");
     }
 
     void Update()
@@ -251,13 +271,46 @@ public class Model3DViewerUI : MonoBehaviour
             autoRotating = false;
             Touch t0 = Input.GetTouch(0);
             Touch t1 = Input.GetTouch(1);
-            float dist = Vector2.Distance(t0.position, t1.position);
 
+            float currentDist = Vector2.Distance(t0.position, t1.position);
+            Vector2 currentCenter = (t0.position + t1.position) * 0.5f;
+
+            // ── Detect if pinch or pan just started ──────────────
             if (t0.phase == TouchPhase.Began || t1.phase == TouchPhase.Began)
-            { lastPinchDist = dist; wasPinching = true; return; }
+            {
+                lastPinchDist = currentDist;
+                lastTwoFingerCenter = currentCenter;
+                wasPanning = false;
+                wasPinching = false;
+                return;
+            }
 
-            SetZoom(currentZoom + (dist - lastPinchDist) * 0.002f);
-            lastPinchDist = dist;
+            // ── Pinch zoom ────────────────────────────────────────
+            float distDelta = currentDist - lastPinchDist;
+            if (Mathf.Abs(distDelta) > 0.5f) // small deadzone to avoid jitter
+            {
+                wasPinching = true;
+                SetZoom(currentZoom + distDelta * 0.002f);
+            }
+
+            // ── Pan (move) with two fingers ──────────────────────
+            Vector2 centerDelta = currentCenter - lastTwoFingerCenter;
+            if (centerDelta.magnitude > 0.5f && !wasPinching)
+            {
+                wasPanning = true;
+                // Scale pan speed — adjust 0.01f to your liking
+                float panSpeed = 0.01f;
+
+                // Move in camera's local X and Y axes (so pan feels natural)
+                Vector3 moveX = modelCamera.transform.right * (-centerDelta.x * panSpeed);
+                Vector3 moveY = modelCamera.transform.up * (-centerDelta.y * panSpeed);
+
+                modelContainer.position += moveX + moveY;
+            }
+
+            // ── Update last values ──────────────────────────────
+            lastPinchDist = currentDist;
+            lastTwoFingerCenter = currentCenter;
             return;
         }
 
@@ -270,12 +323,13 @@ public class Model3DViewerUI : MonoBehaviour
             {
                 case TouchPhase.Began:
                     wasPinching = false;
+                    wasPanning = false;
                     lastSinglePos = t.position;
                     touchStartTime = Time.time;
                     touchStartPos = t.position;
                     break;
                 case TouchPhase.Moved:
-                    if (!wasPinching)
+                    if (!wasPinching && !wasPanning)
                     {
                         Vector2 d = t.position - lastSinglePos;
                         rotationY += d.x * rotationSpeed;
@@ -287,16 +341,21 @@ public class Model3DViewerUI : MonoBehaviour
                     }
                     break;
                 case TouchPhase.Ended:
-                    if (!wasPinching
+                    if (!wasPinching && !wasPanning
                         && Time.time - touchStartTime < TAP_DURATION
                         && Vector2.Distance(t.position, touchStartPos) < TAP_MOVE)
                         TrySelectBone(t.position);
                     wasPinching = false;
+                    wasPanning = false;
                     break;
             }
         }
 
-        if (count == 0) wasPinching = false;
+        if (count == 0)
+        {
+            wasPinching = false;
+            wasPanning = false;
+        }
     }
 
     void HandleMouseInput()
@@ -402,8 +461,8 @@ public class Model3DViewerUI : MonoBehaviour
             if (info != null)
                 //ShowBoneInfo(info);
                 ShowBoneInfo(info, hit);           // for sphereHit
-                //ShowBoneInfo(info, rayHit);        // for rayHit
-                //ShowBoneInfo(info, bigSphereHit);  // for bigSphereHit
+                                                   //ShowBoneInfo(info, rayHit);        // for rayHit
+                                                   //ShowBoneInfo(info, bigSphereHit);  // for bigSphereHit
             else
                 Debug.Log($"[3DViewer] No StructureInfo on {hit.collider.name}. Run Auto Setup.");
         }
@@ -471,7 +530,7 @@ public class Model3DViewerUI : MonoBehaviour
         HighlightBone(hit);
 
         // Zoom in toward the hit bone
-       // ZoomIn(hit.point);
+         ZoomIn(hit.point);
     }
 
 
@@ -490,7 +549,7 @@ public class Model3DViewerUI : MonoBehaviour
         // ── Restore bone to original appearance ──────────────
         RestoreHighlight();
 
-        //ZoomOut();  // reset zoom when closing info
+        ZoomOut();  // reset zoom when closing info
 
         // FIXED — stop using string, use reference instead
         if (slidePanelCoroutine != null) StopCoroutine(slidePanelCoroutine);
@@ -555,34 +614,66 @@ public class Model3DViewerUI : MonoBehaviour
             modelContainer.localScale = Vector3.one * currentZoom;
     }
 
-    void ZoomIn() => SetZoom(currentZoom + zoomStep);
+    void ZoomIntab() => SetZoom(currentZoom + zoomStep);
     void ZoomOuttab() => SetZoom(currentZoom - zoomStep);
 
     void ResetView()
     {
-        rotationX = rotationY = 0f;
+        //rotationX = rotationY = 0f;
+        //currentZoom = 1f;
+        //autoRotating = false;
+        //UpdateRotateBtnVisual();
+        //if (modelContainer)
+        //{
+        //    modelContainer.localRotation = Quaternion.identity;
+        //    modelContainer.localScale = Vector3.one;
+        //}
+        //if (modelContainer != null && gameObject.activeInHierarchy) //added && gameObject.activeInHierarchy
+        //    StartCoroutine(AutoFrameModel());
+        //CloseBoneInfo();
+
+        //// ADD: reset zoom
+        //if (zoomCoroutine != null) StopCoroutine(zoomCoroutine);
+        //if (modelCamera != null)
+        //{
+        //    modelCamera.transform.position = originalCameraPos;
+        //    modelCamera.fieldOfView = zoomOutFOV;
+        //    if (modelContainer != null)
+        //        modelCamera.transform.LookAt(modelContainer.position);
+        //}
+        //isZoomed = false;
+
+        rotationX = 0f;
+        rotationY = 0f;
         currentZoom = 1f;
         autoRotating = false;
         UpdateRotateBtnVisual();
+
         if (modelContainer)
         {
             modelContainer.localRotation = Quaternion.identity;
             modelContainer.localScale = Vector3.one;
         }
-        if (modelContainer != null && gameObject.activeInHierarchy) //added && gameObject.activeInHierarchy
-            StartCoroutine(AutoFrameModel());
-        CloseBoneInfo();
 
-        // ADD: reset zoom
-        if (zoomCoroutine != null) StopCoroutine(zoomCoroutine);
-        if (modelCamera != null)
+        // Reset zoom — restore camera to home
+        if (zoomCoroutine != null)
+        {
+            StopCoroutine(zoomCoroutine);
+            zoomCoroutine = null;
+        }
+        if (modelCamera != null && isZoomed)
         {
             modelCamera.transform.position = originalCameraPos;
-            modelCamera.fieldOfView = zoomOutFOV;
-            if (modelContainer != null)
-                modelCamera.transform.LookAt(modelContainer.position);
+            modelCamera.transform.rotation = originalCameraRot;
+            modelCamera.fieldOfView = originalFOV;
+            isZoomed = false;
         }
-        isZoomed = false;
+
+        // Re-frame model
+        if (modelContainer != null && gameObject.activeInHierarchy)
+            StartCoroutine(AutoFrameModel());
+
+        CloseBoneInfo();
     }
 
     void ToggleAutoRotate()
@@ -780,72 +871,141 @@ public class Model3DViewerUI : MonoBehaviour
     }
 
     // Smoothly zooms camera in toward the tapped bone's world position
-    //void ZoomIn(Vector3 boneWorldPos)
-    //{
-    //    if (modelCamera == null) return;
+    void ZoomIn(Vector3 boneWorldPos)
+    {
+        //if (modelCamera == null) return;
 
-    //    // Calculate target camera position — move closer to the bone
-    //    Vector3 dirToBone = (boneWorldPos - modelCamera.transform.position).normalized;
-    //    float currentDist = Vector3.Distance(modelCamera.transform.position, boneWorldPos);
-    //    float targetDist = currentDist * (1f - zoomInDistance);
+        //// Calculate target camera position — move closer to the bone
+        //Vector3 dirToBone = (boneWorldPos - modelCamera.transform.position).normalized;
+        //float currentDist = Vector3.Distance(modelCamera.transform.position, boneWorldPos);
+        //float targetDist = currentDist * (1f - zoomInDistance);
 
-    //    zoomedCameraPos = modelCamera.transform.position
-    //                    + dirToBone * (currentDist - targetDist);
+        //zoomedCameraPos = modelCamera.transform.position
+        //                + dirToBone * (currentDist - targetDist);
 
-    //    // Start zoom animation
-    //    if (zoomCoroutine != null) StopCoroutine(zoomCoroutine);
-    //    zoomCoroutine = StartCoroutine(
-    //        AnimateZoom(modelCamera.transform.position, zoomedCameraPos,
-    //                    modelCamera.fieldOfView, zoomInFOV));
+        //// Start zoom animation
+        //if (zoomCoroutine != null) StopCoroutine(zoomCoroutine);
+        //zoomCoroutine = StartCoroutine(
+        //    AnimateZoom(modelCamera.transform.position, zoomedCameraPos,
+        //                modelCamera.fieldOfView, zoomInFOV));
 
-    //    isZoomed = true;
-    //}
+        //isZoomed = true;
+        if (modelCamera == null) return;
+
+        // Always start zoom FROM the original home position
+        // This prevents compounding when tapping different bones
+        Vector3 startPos = originalCameraPos;
+        Quaternion startRot = originalCameraRot;
+        float startFOV = isZoomed
+            ? zoomInFOV              // already zoomed — keep same FOV
+            : originalFOV;           // not zoomed — start from original
+
+        // Move camera halfway between home and bone
+        Vector3 dirToBone = (boneWorldPos - originalCameraPos).normalized;
+        float distToBone = Vector3.Distance(originalCameraPos, boneWorldPos);
+        float moveAmount = distToBone * 0.35f; // move 35% closer
+        Vector3 targetPos = originalCameraPos + dirToBone * moveAmount;
+
+        // Calculate target rotation to look at bone
+        Quaternion targetRot = Quaternion.LookRotation(
+            boneWorldPos - targetPos);
+
+        // Stop any running zoom first
+        if (zoomCoroutine != null)
+        {
+            StopCoroutine(zoomCoroutine);
+            zoomCoroutine = null;
+        }
+
+        isZoomed = true;
+        zoomCoroutine = StartCoroutine(
+            AnimateZoom(startPos, targetPos,
+                        startRot, targetRot,
+                        startFOV, zoomInFOV));
+    }
 
     // Smoothly zooms camera back to original position and FOV
-    //void ZoomOut()
-    //{
-    //    if (modelCamera == null || !isZoomed) return;
+    void ZoomOut()
+    {
+        //if (modelCamera == null || !isZoomed) return;
 
-    //    if (zoomCoroutine != null) StopCoroutine(zoomCoroutine);
-    //    zoomCoroutine = StartCoroutine(
-    //        AnimateZoom(modelCamera.transform.position, originalCameraPos,
-    //                    modelCamera.fieldOfView, zoomOutFOV));
+        //if (zoomCoroutine != null) StopCoroutine(zoomCoroutine);
+        //zoomCoroutine = StartCoroutine(
+        //    AnimateZoom(modelCamera.transform.position, originalCameraPos,
+        //                modelCamera.fieldOfView, zoomOutFOV));
 
-    //    isZoomed = false;
-    //}
+        //isZoomed = false;
+        if (modelCamera == null || !isZoomed) return;
+
+        Vector3 fromPos = modelCamera.transform.position;
+        Quaternion fromRot = modelCamera.transform.rotation;
+        float fromFOV = modelCamera.fieldOfView;
+
+        if (zoomCoroutine != null)
+        {
+            StopCoroutine(zoomCoroutine);
+            zoomCoroutine = null;
+        }
+
+        isZoomed = false;
+        zoomCoroutine = StartCoroutine(
+            AnimateZoom(fromPos, originalCameraPos,
+                        fromRot, originalCameraRot,
+                        fromFOV, originalFOV));
+    }
 
     // Coroutine that smoothly animates camera position and FOV
+    IEnumerator AnimateZoom(Vector3 fromPos, Vector3 toPos, Quaternion fromRot, Quaternion toRot, float fromFOV, float toFOV)
+    {
+        //float elapsed = 0f;
 
-    //IEnumerator AnimateZoom(Vector3 fromPos, Vector3 toPos,
-    //                     float fromFOV, float toFOV)
-    //{
-    //    float elapsed = 0f;
+        //while (elapsed < zoomDuration)
+        //{
+        //    elapsed += Time.deltaTime;
+        //    float t = Mathf.SmoothStep(0f, 1f, elapsed / zoomDuration);
 
-    //    while (elapsed < zoomDuration)
-    //    {
-    //        elapsed += Time.deltaTime;
-    //        float t = Mathf.SmoothStep(0f, 1f, elapsed / zoomDuration);
+        //    // Animate position
+        //    modelCamera.transform.position =
+        //        Vector3.Lerp(fromPos, toPos, t);
 
-    //        // Animate position
-    //        modelCamera.transform.position =
-    //            Vector3.Lerp(fromPos, toPos, t);
+        //    // Animate FOV (field of view = zoom)
+        //    modelCamera.fieldOfView =
+        //        Mathf.Lerp(fromFOV, toFOV, t);
 
-    //        // Animate FOV (field of view = zoom)
-    //        modelCamera.fieldOfView =
-    //            Mathf.Lerp(fromFOV, toFOV, t);
+        //    // Keep camera looking at model center
+        //    if (modelContainer != null)
+        //        modelCamera.transform.LookAt(modelContainer.position);
 
-    //        // Keep camera looking at model center
-    //        if (modelContainer != null)
-    //            modelCamera.transform.LookAt(modelContainer.position);
+        //    yield return null;
+        //}
 
-    //        yield return null;
-    //    }
+        //// Snap to final values
+        //modelCamera.transform.position = toPos;
+        //modelCamera.fieldOfView = toFOV;
 
-    //    // Snap to final values
-    //    modelCamera.transform.position = toPos;
-    //    modelCamera.fieldOfView = toFOV;
+        //if (modelContainer != null)
+        //    modelCamera.transform.LookAt(modelContainer.position);
 
-    //    if (modelContainer != null)
-    //        modelCamera.transform.LookAt(modelContainer.position);
-    //}
+        if (modelCamera == null) yield break;
+
+        float elapsed = 0f;
+
+        while (elapsed < zoomDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / zoomDuration);
+
+            modelCamera.transform.position = Vector3.Lerp(fromPos, toPos, t);
+            modelCamera.transform.rotation = Quaternion.Slerp(fromRot, toRot, t);
+            modelCamera.fieldOfView = Mathf.Lerp(fromFOV, toFOV, t);
+
+            yield return null;
+        }
+
+        // Snap to exact final values — prevents drift
+        modelCamera.transform.position = toPos;
+        modelCamera.transform.rotation = toRot;
+        modelCamera.fieldOfView = toFOV;
+        zoomCoroutine = null;
+    }
 }
