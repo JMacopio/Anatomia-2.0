@@ -13,11 +13,9 @@ public class Model3DViewerUI : MonoBehaviour
     public GameObject muscularModel;
     public GameObject cardiovascularModel;
 
-    [Header("Highlight Settings")]
-    public Material highlightMaterial;      // drag your glow material here
-    public Color highlightColor = new Color(0.4f, 0.8f, 1.0f, 1f); // cyan-blue glow
-    public float highlightIntensity = 2.5f; // emission intensity
-    public bool pulseHighlight = true;  // animate the glow
+    public Color outlineColor = new Color(0.4f, 0.9f, 1.0f); // cyan
+    public float outlineThickness = 1.06f; // scale multiplier (1.02 - 1.06)
+    public bool pulseOutline = true;
 
     [Header("Header")]
     public Button backBtn;
@@ -94,10 +92,10 @@ public class Model3DViewerUI : MonoBehaviour
 
     private Coroutine slidePanelCoroutine;
 
-    private Renderer highlightedRenderer;
-    private Material[] originalMaterials;
-    private Material runtimeHighlightMat; // created at runtime
-    private Coroutine pulseCoroutine;
+    // Private outline state — replaces old highlight fields
+    private GameObject outlineObject;          // the duplicate that shows outline
+    private Material outlineMaterial;        // back-face material
+    private Coroutine outlinePulseCoroutine;
 
     // Private zoom state
     private Vector3 originalCameraPos;
@@ -135,9 +133,9 @@ public class Model3DViewerUI : MonoBehaviour
         systemTitleText.text = system.systemName;
 
         // ── Swap highlight color per system ─────────────────── added
-        highlightColor = HighlightMaterialFactory
-            .GetSystemColor(system.systemName);
+        outlineColor = HighlightMaterialFactory.GetSystemColor(system.systemName);
         InitHighlightMaterial(); // recreate material with new color
+        RemoveOutline();
 
         //added this part and switch statement to show correct model based on system name
         // Hide all models first
@@ -752,104 +750,150 @@ public class Model3DViewerUI : MonoBehaviour
     // Creates the highlight material at runtime if none is assigned
     void InitHighlightMaterial()
     {
-        if (highlightMaterial != null)
-        {
-            // Use assigned material as base
-            runtimeHighlightMat = new Material(highlightMaterial);
-        }
-        else
-        {
-            // Create a simple URP Lit material with emission
-            runtimeHighlightMat = new Material(
-                Shader.Find("Universal Render Pipeline/Lit"));
+        // Use URP Unlit — simpler than Lit, cull mode works reliably
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
 
-            if (runtimeHighlightMat == null)
-            {
-                // Fallback to standard if URP not found
-                runtimeHighlightMat = new Material(
-                    Shader.Find("Standard"));
-            }
-        }
+        // Fallback shaders
+        if (shader == null)
+            shader = Shader.Find("Unlit/Color");
+        if (shader == null)
+            shader = Shader.Find("Standard");
 
-        // Enable emission
-        runtimeHighlightMat.EnableKeyword("_EMISSION");
-        runtimeHighlightMat.SetColor("_BaseColor", highlightColor);
-        runtimeHighlightMat.SetColor("_Color", highlightColor);
-        runtimeHighlightMat.SetColor("_EmissionColor",
-            highlightColor * highlightIntensity);
-        runtimeHighlightMat.SetFloat("_Smoothness", 0.8f);
-        runtimeHighlightMat.SetFloat("_Metallic", 0.2f);
+        outlineMaterial = new Material(shader);
+
+        // Set the outline color
+        outlineMaterial.SetColor("_BaseColor", outlineColor);
+        outlineMaterial.SetColor("_Color", outlineColor); // Standard fallback
+
+        // KEY FIX: Render ONLY back faces so outline shows around the mesh
+        // Front faces are hidden by the original mesh sitting in front
+        outlineMaterial.SetFloat("_Cull",
+            (float)UnityEngine.Rendering.CullMode.Front);
+
+        // No shadows or lighting — pure color outline
+        outlineMaterial.SetFloat("_ReceiveShadows", 0f);
+        outlineMaterial.SetFloat("_ShadowCaster", 0f);
+
+        // Make sure it renders in correct pass
+        outlineMaterial.renderQueue = 3001; // just above opaque
+
+        Debug.Log($"[Outline] Material created with shader: " +
+                  (shader != null ? shader.name : "NULL"));
     }
 
     // Highlights the bone that was hit by the raycast
     void HighlightBone(RaycastHit hit)
     {
-        // Restore any previously highlighted bone first
-        RestoreHighlight();
+        RemoveOutline();
 
-        // Get the renderer from the hit collider or its parent
+        // Get renderer from hit object or its parent
         Renderer rend = hit.collider.GetComponent<Renderer>()
                      ?? hit.collider.GetComponentInParent<Renderer>();
 
-        if (rend == null) return;
-
-        // Save original materials so we can restore them later
-        highlightedRenderer = rend;
-        originalMaterials = rend.sharedMaterials;
-
-        // Apply highlight material to all material slots
-        Material[] highlighted = new Material[rend.sharedMaterials.Length];
-        for (int i = 0; i < highlighted.Length; i++)
-            highlighted[i] = runtimeHighlightMat;
-        rend.materials = highlighted;
-
-        // Start pulse animation if enabled
-        if (pulseHighlight)
+        if (rend == null)
         {
-            if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
-            pulseCoroutine = StartCoroutine(PulseHighlight());
+            Debug.Log("[Outline] No renderer found on hit object.");
+            return;
+        }
+
+        // Get shared mesh
+        Mesh mesh = null;
+        var mf = rend.GetComponent<MeshFilter>();
+        var smr = rend.GetComponent<SkinnedMeshRenderer>();
+
+        if (mf != null && mf.sharedMesh != null)
+        {
+            mesh = mf.sharedMesh;
+        }
+        else if (smr != null)
+        {
+            // Bake skinned mesh to get current pose
+            mesh = new Mesh();
+            smr.BakeMesh(mesh);
+        }
+
+        if (mesh == null)
+        {
+            Debug.Log("[Outline] No mesh found.");
+            return;
+        }
+
+        // Create outline child object
+        outlineObject = new GameObject("_BoneOutline");
+        outlineObject.transform.SetParent(rend.transform, false);
+        outlineObject.transform.localPosition = Vector3.zero;
+        outlineObject.transform.localRotation = Quaternion.identity;
+        outlineObject.transform.localScale = Vector3.one * outlineThickness;
+
+        // Add mesh to outline object
+        outlineObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var outRend = outlineObject.AddComponent<MeshRenderer>();
+        outRend.sharedMaterial = outlineMaterial;
+        outRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        outRend.receiveShadows = false;
+
+        // ── KEY FIX: Set to SkeletonModel layer ──────────────────
+        // Second Camera only renders SkeletonModel layer
+        // If outline is on UI or Default layer, camera won't see it!
+        int skeletonLayer = LayerMask.NameToLayer("SkeletonModel");
+        outlineObject.layer = skeletonLayer != -1 ? skeletonLayer : 0;
+
+        Debug.Log($"[Outline] Created on layer: " +
+                  LayerMask.LayerToName(outlineObject.layer));
+
+        // Start pulse animation
+        if (pulseOutline)
+        {
+            if (outlinePulseCoroutine != null) StopCoroutine(outlinePulseCoroutine);
+            outlinePulseCoroutine = StartCoroutine(PulseOutline());
         }
     }
 
 
     // Restores the bone to its original materials
-    void RestoreHighlight()
+    void RestoreHighlight() => RemoveOutline();
+
+    void RemoveOutline()
     {
-        // Stop pulse animation
-        if (pulseCoroutine != null)
+        if (outlinePulseCoroutine != null)
         {
-            StopCoroutine(pulseCoroutine);
-            pulseCoroutine = null;
+            StopCoroutine(outlinePulseCoroutine);
+            outlinePulseCoroutine = null;
         }
 
-        // Restore original materials
-        if (highlightedRenderer != null && originalMaterials != null)
+        if (outlineObject != null)
         {
-            highlightedRenderer.sharedMaterials = originalMaterials;
-            highlightedRenderer = null;
-            originalMaterials = null;
+            Destroy(outlineObject);
+            outlineObject = null;
         }
     }
 
 
     // Animates the highlight emission to pulse/glow in and out
-    IEnumerator PulseHighlight()
+    IEnumerator PulseOutline()
     {
         float time = 0f;
-        float speed = 2f; // pulse speed
+        float speed = 2.5f;
 
-        while (true)
+        while (outlineObject != null)
         {
             time += Time.deltaTime * speed;
-
-            // Oscillate intensity between base and boosted
             float t = (Mathf.Sin(time) + 1f) * 0.5f;
-            float intensity = Mathf.Lerp(1.5f, highlightIntensity, t);
 
-            if (runtimeHighlightMat != null)
+            // Pulse scale between base and slightly larger
+            if (outlineObject != null)
+                outlineObject.transform.localScale =
+                    Vector3.one * Mathf.Lerp(outlineThickness,
+                                              outlineThickness + 0.02f, t);
+
+            // Pulse color brightness
+            if (outlineMaterial != null)
             {
-                runtimeHighlightMat.SetColor("_EmissionColor",
-                    highlightColor * intensity);
+                Color pulsedColor = Color.Lerp(
+                    outlineColor,
+                    outlineColor * 2.0f, t);
+                outlineMaterial.SetColor("_BaseColor", pulsedColor);
+                outlineMaterial.SetColor("_Color", pulsedColor);
             }
 
             yield return null;
