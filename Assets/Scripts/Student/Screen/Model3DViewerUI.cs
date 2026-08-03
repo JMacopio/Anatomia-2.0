@@ -361,7 +361,7 @@ public class Model3DViewerUI : MonoBehaviour
         // Left mouse button drag = rotate (same as single finger)
         if (Input.GetMouseButton(0) && !IsMouseOverButton())
         {
-            rotationY += Input.GetAxis("Mouse X") * 150f * Time.deltaTime;
+            rotationY -= Input.GetAxis("Mouse X") * 150f * Time.deltaTime;
             rotationX -= Input.GetAxis("Mouse Y") * 150f * Time.deltaTime;
             rotationX = Mathf.Clamp(rotationX, -70f, 70f);
             ApplyRotation();
