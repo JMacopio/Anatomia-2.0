@@ -528,7 +528,7 @@ public class Model3DViewerUI : MonoBehaviour
         HighlightBone(hit);
 
         // Zoom in toward the hit bone
-         ZoomIn(hit.point);
+        ZoomIn(hit.point);
     }
 
 
