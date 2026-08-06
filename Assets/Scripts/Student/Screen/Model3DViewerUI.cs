@@ -97,9 +97,9 @@ public class Model3DViewerUI : MonoBehaviour
     // Private outline state — replaces old highlight fields
     private GameObject outlineObject;
     private Material outlineMaterial;
-    //private Renderer glowRenderer;           // original mesh renderer
-    //private Material[] originalMaterials;     // saved originals
-    //private Material[] glowMaterials;         // copies with emission
+    private Renderer glowRenderer;           // original mesh renderer
+    private Material[] originalMaterials;     // saved originals
+    private Material[] glowMaterials;         // copies with emission
     private Coroutine pulseCoroutine;
 
     // Private zoom state
@@ -777,13 +777,56 @@ public class Model3DViewerUI : MonoBehaviour
     {
         RemoveOutline();
 
-        Renderer rend = hit.collider.GetComponent<Renderer>()
-                     ?? hit.collider.GetComponentInParent<Renderer>();
-        if (rend == null) return;
+        // ── Get MeshCollider directly ─────────────────────────────
+        MeshCollider meshCol = hit.collider.GetComponent<MeshCollider>();
 
-        int skeletonLayer = LayerMask.NameToLayer("SkeletonModel");
+        if (meshCol != null && meshCol.sharedMesh != null)
+        {
+            // Use the collider's exact mesh for the outline
+            // This works for ALL bones regardless of renderer setup
+            CreateOutlineFromMesh(meshCol.sharedMesh, hit.collider.transform);
+        }
+        else
+        {
+            // Fallback for any non-MeshCollider objects
+            Renderer rend = hit.collider.GetComponent<Renderer>()
+                         ?? hit.collider.GetComponentInParent<Renderer>();
+            if (rend != null)
+                CreateMeshOutline(rend);
+        }
+    }
 
-        // Get the mesh (supports both MeshFilter and SkinnedMeshRenderer)
+    void CreateOutlineFromMesh(Mesh sourceMesh, Transform boneTransform)
+    {
+        outlineObject = new GameObject("_BoneOutline");
+
+        // Parent to the bone transform so it moves when model rotates
+        outlineObject.transform.SetParent(boneTransform, false);
+        outlineObject.transform.localPosition = Vector3.zero;
+        outlineObject.transform.localRotation = Quaternion.identity;
+        outlineObject.transform.localScale = Vector3.one * outlineThickness;
+
+        // Set to SkeletonModel layer so Second Camera sees it
+        int layer = LayerMask.NameToLayer("SkeletonModel");
+        outlineObject.layer = layer != -1 ? layer : 0;
+
+        // Add the exact collider mesh as the visual mesh
+        outlineObject.AddComponent<MeshFilter>().sharedMesh = sourceMesh;
+
+        var outRend = outlineObject.AddComponent<MeshRenderer>();
+        outRend.sharedMaterial = outlineMaterial; // back-face cyan material
+        outRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        outRend.receiveShadows = false;
+
+        StartPulse();
+
+        Debug.Log($"[Highlight] Outline created from MeshCollider: " +
+                  $"{boneTransform.name} | " +
+                  $"verts: {sourceMesh.vertexCount}");
+    }
+
+    void CreateMeshOutline(Renderer rend)
+    {
         Mesh mesh = null;
         var mf = rend.GetComponent<MeshFilter>();
         var smr = rend.GetComponent<SkinnedMeshRenderer>();
@@ -798,13 +841,14 @@ public class Model3DViewerUI : MonoBehaviour
 
         if (mesh == null) return;
 
-        // ── Create the outline child ──────────────────────────────────
         outlineObject = new GameObject("_BoneOutline");
         outlineObject.transform.SetParent(rend.transform, false);
         outlineObject.transform.localPosition = Vector3.zero;
         outlineObject.transform.localRotation = Quaternion.identity;
         outlineObject.transform.localScale = Vector3.one * outlineThickness;
-        outlineObject.layer = skeletonLayer != -1 ? skeletonLayer : 0;
+
+        int layer = LayerMask.NameToLayer("SkeletonModel");
+        outlineObject.layer = layer != -1 ? layer : 0;
 
         outlineObject.AddComponent<MeshFilter>().sharedMesh = mesh;
         var outRend = outlineObject.AddComponent<MeshRenderer>();
@@ -812,14 +856,16 @@ public class Model3DViewerUI : MonoBehaviour
         outRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         outRend.receiveShadows = false;
 
-        // ── Start pulse animation (if enabled) ──────────────────────
+        StartPulse();
+    }
+
+    void StartPulse()
+    {
         if (pulseHighlight)
         {
             if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
-            pulseCoroutine = StartCoroutine(PulseOutline());
+            pulseCoroutine = StartCoroutine(PulseOutlineOnly());
         }
-
-        Debug.Log($"[Highlight] Outline created for: {rend.name}");
     }
 
 
@@ -828,44 +874,76 @@ public class Model3DViewerUI : MonoBehaviour
 
     void RemoveOutline()
     {
+        // Stop pulse
         if (pulseCoroutine != null)
         {
             StopCoroutine(pulseCoroutine);
             pulseCoroutine = null;
         }
 
+        // Destroy outline object
         if (outlineObject != null)
         {
             Destroy(outlineObject);
             outlineObject = null;
         }
+
+        // Restore original materials on the glowing mesh
+        if (glowRenderer != null && originalMaterials != null)
+        {
+            glowRenderer.sharedMaterials = originalMaterials;
+
+            // Clean up glow material copies
+            if (glowMaterials != null)
+            {
+                foreach (var mat in glowMaterials)
+                    if (mat != null) Destroy(mat);
+                glowMaterials = null;
+            }
+
+            glowRenderer = null;
+            originalMaterials = null;
+        }
     }
 
 
     // Animates the highlight emission to pulse/glow in and out
-    IEnumerator PulseOutline()
+    IEnumerator PulseOutlineOnly()
     {
         float time = 0f;
-        float speed = 2.0f;
+        float speed = 2.0f; // pulse speed
 
-        while (outlineObject != null)
+        while (outlineObject != null || glowRenderer != null)
         {
             time += Time.deltaTime * speed;
             float t = (Mathf.Sin(time) + 1f) * 0.5f;
 
-            // Pulse scale (thicker ⇔ thinner)
+            // ── Pulse outline scale ───────────────────────────
             if (outlineObject != null)
                 outlineObject.transform.localScale =
                     Vector3.one * Mathf.Lerp(
                         outlineThickness,
-                        outlineThickness + 0.03f, t);
+                        outlineThickness + 0.025f, t);
 
-            // Pulse color brightness (optional)
+            // ── Pulse outline color brightness ────────────────
             if (outlineMaterial != null)
             {
-                Color c = Color.Lerp(outlineColor, Color.white, t * 0.3f);
+                Color c = Color.Lerp(outlineColor, Color.white, t * 0.5f);
                 outlineMaterial.SetColor("_BaseColor", c);
                 outlineMaterial.SetColor("_Color", c);
+            }
+
+            // ── Pulse emission glow intensity ─────────────────
+            if (glowMaterials != null)
+            {
+                float intensity = Mathf.Lerp(glowIntensity * 0.5f,
+                                              glowIntensity * 1.5f, t);
+                Color glowColor = Color.Lerp(outlineColor, Color.white, 0.5f)
+                                * intensity;
+
+                foreach (var mat in glowMaterials)
+                    if (mat != null)
+                        mat.SetColor("_EmissionColor", glowColor);
             }
 
             yield return null;

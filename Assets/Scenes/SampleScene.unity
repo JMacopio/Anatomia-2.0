@@ -70992,8 +70992,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -122, y: 74.3}
-  m_SizeDelta: {x: 116.424, y: 48.507}
+  m_AnchoredPosition: {x: -104.864136, y: 74.3}
+  m_SizeDelta: {x: 150.6957, y: 48.507}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &669131754
 MonoBehaviour:
@@ -100954,9 +100954,9 @@ MonoBehaviour:
   skeletalModel: {fileID: 919132149155446097, guid: 3abe896e8238b3d4a88fb90070ac7899, type: 3}
   muscularModel: {fileID: 237210111}
   cardiovascularModel: {fileID: 647912005}
-  highlightMaterial: {fileID: 2100000, guid: 792da27c9aa98a54ebf32ac7b988c1f7, type: 2}
-  highlightColor: {r: 0.4, g: 0.8, b: 1, a: 1}
-  highlightIntensity: 2.5
+  outlineColor: {r: 0, g: 1, b: 1, a: 1}
+  outlineThickness: 1.08
+  glowIntensity: 3
   pulseHighlight: 1
   backBtn: {fileID: 1845205136}
   systemTitleText: {fileID: 855693430}
@@ -112043,7 +112043,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1107752685
 RectTransform:
   m_ObjectHideFlags: 0

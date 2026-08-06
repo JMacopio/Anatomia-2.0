@@ -33,6 +33,7 @@ public class MuscularSystemAutoSetup : EditorWindow
         {
                 // ── HEAD & NECK ───────────────────────────────────────
             { "frontalis",        ("Frontalis",         "Raises the eyebrows and wrinkles the forehead.", "Head & Neck") },
+            { "rectus oculi",     ("Rectus Oculi",       "Muscles that move the eyeball.", "Head & Neck") }, //added
             { "temporalis",       ("Temporalis",         "Closes the jaw and is involved in chewing.", "Head & Neck") },
             { "masseter",         ("Masseter",           "The primary muscle used for chewing (mastication).", "Head & Neck") },
             { "orbicularis oculi",("Orbicularis Oculi",  "Closes the eyelids and is involved in blinking.", "Head & Neck") },
@@ -45,6 +46,7 @@ public class MuscularSystemAutoSetup : EditorWindow
             { "trapezius",        ("Trapezius",          "Moves, rotates, and stabilizes the shoulder blade.", "Head & Neck") },
             { "splenius",         ("Splenius",           "Rotates and extends the head and neck.", "Head & Neck") },
             { "scalene",          ("Scalene",            "Flexes and rotates the cervical spine; assists breathing.", "Head & Neck") },
+            { "oblique capitis",  ("Oblique Capitis",    "Rotates the head.", "Head & Neck") }, //added
 
             // ── CHEST ─────────────────────────────────────────────
             { "pectoralis major", ("Pectoralis Major",   "The large chest muscle that flexes, adducts, and rotates the arm.", "Chest") },
