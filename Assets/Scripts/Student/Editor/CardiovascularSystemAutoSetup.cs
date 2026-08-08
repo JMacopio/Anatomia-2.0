@@ -27,115 +27,518 @@ public class CardiovascularSystemAutoSetup : EditorWindow
         "camera", "light", "lamp", "armature"
     };
 
-    // ── Cardiovascular name → (display name, description, category) ──
+    // ── CARDIOVASCULAR name → (display name, description, category) ──
     private static readonly Dictionary<string,
-        (string name, string desc, string cat)> cardioData =
-        new Dictionary<string, (string, string, string)>
+    (string name, string desc, string cat)> cardioData =
+    new Dictionary<string, (string, string, string)>
     {
-        // ── HEART ─────────────────────────────────────────────────────
-        { "heart",              ("Heart",                  "The heart is a muscular organ that pumps blood throughout the body via the circulatory system.", "Heart") },
-        { "cardiac",            ("Cardiac Muscle",         "Cardiac muscle is involuntary striated muscle tissue found only in the heart.", "Heart") },
-        { "myocardium",         ("Myocardium",             "The muscular middle layer of the heart wall that contracts to pump blood.", "Heart") },
-        { "pericardium",        ("Pericardium",            "The protective double-walled sac surrounding the heart and the roots of the great vessels.", "Heart") },
-        { "epicardium",         ("Epicardium",             "The outer layer of the heart wall, also the inner layer of the pericardium.", "Heart") },
-        { "endocardium",        ("Endocardium",            "The innermost layer of tissue lining the chambers of the heart.", "Heart") },
 
-        // ── HEART CHAMBERS ────────────────────────────────────────────
-        { "left atrium",        ("Left Atrium",            "The upper-left chamber that receives oxygenated blood from the pulmonary veins.", "Heart Chambers") },
-        { "right atrium",       ("Right Atrium",           "The upper-right chamber that receives deoxygenated blood from the body via the vena cava.", "Heart Chambers") },
-        { "left ventricle",     ("Left Ventricle",         "The lower-left chamber that pumps oxygenated blood to the body through the aorta.", "Heart Chambers") },
-        { "right ventricle",    ("Right Ventricle",        "The lower-right chamber that pumps deoxygenated blood to the lungs through the pulmonary artery.", "Heart Chambers") },
-        { "atrium",             ("Atrium",                 "The upper chambers of the heart that receive blood from veins.", "Heart Chambers") },
-        { "ventricle",          ("Ventricle",              "The lower chambers of the heart that pump blood out to the body or lungs.", "Heart Chambers") },
-        { "septum",             ("Septum",                 "The wall dividing the left and right sides of the heart.", "Heart Chambers") },
-        { "interventricular",   ("Interventricular Septum","The wall separating the left and right ventricles of the heart.", "Heart Chambers") },
-        { "interatrial",        ("Interatrial Septum",     "The wall separating the left and right atria of the heart.", "Heart Chambers") },
-        { "apex",               ("Heart Apex",             "The pointed lower tip of the heart, formed by the left ventricle.", "Heart") },
-        { "base",               ("Heart Base",             "The broad upper part of the heart from which the great vessels emerge.", "Heart") },
+    // ── CARDIOVASCULAR SYSTEM ─────────────────────────────────────
+    { "cardiovascular system",
+        ("Cardiovascular System",
+         "The cardiovascular system consists of the heart, blood vessels, and blood. It includes pulmonary circulation, which carries blood between the heart and lungs, and systemic circulation, which carries blood between the heart and the rest of the body.",
+         "Cardiovascular System") },
 
-        // ── HEART VALVES ──────────────────────────────────────────────
-        { "mitral",             ("Mitral Valve",           "The bicuspid valve between the left atrium and left ventricle. Prevents backflow.", "Heart Valves") },
-        { "bicuspid",           ("Bicuspid (Mitral) Valve","Controls blood flow between the left atrium and left ventricle.", "Heart Valves") },
-        { "tricuspid",          ("Tricuspid Valve",        "The valve between the right atrium and right ventricle with three cusps.", "Heart Valves") },
-        { "aortic valve",       ("Aortic Valve",           "Controls blood flow from the left ventricle into the aorta.", "Heart Valves") },
-        { "pulmonary valve",    ("Pulmonary Valve",        "Controls blood flow from the right ventricle into the pulmonary artery.", "Heart Valves") },
-        { "semilunar",          ("Semilunar Valve",        "Half-moon shaped valves (aortic and pulmonary) that prevent backflow into the ventricles.", "Heart Valves") },
-        { "chordae",            ("Chordae Tendineae",      "Tendon-like cords connecting the papillary muscles to the tricuspid and mitral valves.", "Heart Valves") },
-        { "papillary",          ("Papillary Muscles",      "Muscles that control the mitral and tricuspid valves via the chordae tendineae.", "Heart Valves") },
-        { "cusp",               ("Valve Cusp",             "A flap of the heart valve that opens and closes to regulate blood flow.", "Heart Valves") },
+    { "circulatory system",
+        ("Circulatory System",
+         "The circulatory system includes the heart, blood vessels, and blood. It transports oxygen, nutrients, and other substances throughout the body and removes metabolic waste.",
+         "Cardiovascular System") },
 
-        // ── GREAT VESSELS ─────────────────────────────────────────────
-        { "aorta",              ("Aorta",                  "The largest artery in the body, carrying oxygenated blood from the left ventricle to the body.", "Great Vessels") },
-        { "ascending aorta",    ("Ascending Aorta",        "The first section of the aorta that rises from the left ventricle.", "Great Vessels") },
-        { "descending aorta",   ("Descending Aorta",       "The section of the aorta that travels downward through the chest and abdomen.", "Great Vessels") },
-        { "aortic arch",        ("Aortic Arch",            "The curved section of the aorta that connects the ascending and descending aorta.", "Great Vessels") },
-        { "arch",               ("Aortic Arch",            "The curved section of the aorta giving rise to the major head and arm vessels.", "Great Vessels") },
-        { "pulmonary artery",   ("Pulmonary Artery",       "Carries deoxygenated blood from the right ventricle to the lungs.", "Great Vessels") },
-        { "pulmonary trunk",    ("Pulmonary Trunk",        "The main vessel that divides into left and right pulmonary arteries.", "Great Vessels") },
-        { "pulmonary vein",     ("Pulmonary Vein",         "Carries oxygenated blood from the lungs back to the left atrium.", "Great Vessels") },
-        { "superior vena cava", ("Superior Vena Cava",     "The large vein returning deoxygenated blood from the upper body to the right atrium.", "Great Vessels") },
-        { "inferior vena cava", ("Inferior Vena Cava",     "The large vein returning deoxygenated blood from the lower body to the right atrium.", "Great Vessels") },
-        { "vena cava",          ("Vena Cava",              "The large veins returning deoxygenated blood from the body to the heart.", "Great Vessels") },
-        { "svc",                ("Superior Vena Cava",     "Returns deoxygenated blood from the head, neck and arms to the right atrium.", "Great Vessels") },
-        { "ivc",                ("Inferior Vena Cava",     "Returns deoxygenated blood from the lower body to the right atrium.", "Great Vessels") },
+    // ── HEART ─────────────────────────────────────────────────────
+    { "heart",
+        ("Heart",
+         "The heart is a muscular organ that pumps blood through the blood vessels of the circulatory system. It is located between the lungs in the middle compartment of the chest and contains four chambers in humans.",
+         "Heart") },
 
-        // ── CORONARY VESSELS ──────────────────────────────────────────
-        { "coronary",           ("Coronary Artery",        "Arteries that supply oxygenated blood to the heart muscle itself.", "Coronary Vessels") },
-        { "left coronary",      ("Left Coronary Artery",   "Supplies blood to the left side of the heart including the left ventricle.", "Coronary Vessels") },
-        { "right coronary",     ("Right Coronary Artery",  "Supplies blood to the right side of the heart and the SA/AV nodes.", "Coronary Vessels") },
-        { "lad",                ("Left Anterior Descending","Supplies blood to the front of the heart; most commonly blocked in heart attacks.", "Coronary Vessels") },
-        { "left anterior",      ("Left Anterior Descending","Supplies blood to the front of the left ventricle.", "Coronary Vessels") },
-        { "circumflex",         ("Circumflex Artery",      "Supplies blood to the left atrium and the back of the left ventricle.", "Coronary Vessels") },
-        { "marginal",           ("Marginal Artery",        "A branch of the right coronary artery supplying the right ventricle.", "Coronary Vessels") },
-        { "posterior descending",("Posterior Descending",  "Supplies blood to the bottom and back of the heart.", "Coronary Vessels") },
-        { "coronary sinus",     ("Coronary Sinus",         "A collection of veins that drain deoxygenated blood from the heart muscle.", "Coronary Vessels") },
+    { "cardiac muscle",
+        ("Cardiac Muscle",
+         "Cardiac muscle is the specialized muscle tissue of the heart responsible for producing the contractions that pump blood through the circulatory system.",
+         "Heart") },
 
-        // ── MAJOR ARTERIES ────────────────────────────────────────────
-        { "brachiocephalic",    ("Brachiocephalic Artery", "The first major branch of the aortic arch supplying the right arm and right side of the head.", "Major Arteries") },
-        { "common carotid",     ("Common Carotid Artery",  "Supplies blood to the head and neck; divides into internal and external carotid.", "Major Arteries") },
-        { "carotid",            ("Carotid Artery",         "Major artery supplying the brain, neck, and face with oxygenated blood.", "Major Arteries") },
-        { "subclavian",         ("Subclavian Artery",      "Supplies blood to the arms, neck, thoracic wall, and brain.", "Major Arteries") },
-        { "brachial",           ("Brachial Artery",        "Main artery of the upper arm; used for blood pressure measurement.", "Major Arteries") },
-        { "radial",             ("Radial Artery",          "Artery of the forearm used to measure pulse at the wrist.", "Major Arteries") },
-        { "ulnar",              ("Ulnar Artery",           "Artery of the forearm on the little finger side.", "Major Arteries") },
-        { "celiac",             ("Celiac Trunk",           "The first major branch of the abdominal aorta supplying digestive organs.", "Major Arteries") },
-        { "mesenteric",         ("Mesenteric Artery",      "Supplies blood to the intestines.", "Major Arteries") },
-        { "renal",              ("Renal Artery",           "Supplies oxygenated blood to the kidneys.", "Major Arteries") },
-        { "iliac",              ("Iliac Artery",           "Supplies blood to the pelvis and lower limbs.", "Major Arteries") },
-        { "femoral",            ("Femoral Artery",         "The main artery of the thigh supplying the lower limb.", "Major Arteries") },
-        { "popliteal",          ("Popliteal Artery",       "Continuation of the femoral artery behind the knee.", "Major Arteries") },
-        { "tibial",             ("Tibial Artery",          "Supplies blood to the lower leg and foot.", "Major Arteries") },
-        { "vertebral",          ("Vertebral Artery",       "Supplies blood to the brainstem, cerebellum, and spinal cord.", "Major Arteries") },
+    { "endocardium",
+        ("Endocardium",
+         "The endocardium is the innermost layer of tissue lining the chambers of the heart. It also covers the heart valves and lies directly beneath the myocardium.",
+         "Heart") },
 
-        // ── MAJOR VEINS ───────────────────────────────────────────────
-        { "jugular",            ("Jugular Vein",           "Returns deoxygenated blood from the brain, face, and neck to the heart.", "Major Veins") },
-        { "subclavian vein",    ("Subclavian Vein",        "Returns blood from the arm to the superior vena cava.", "Major Veins") },
-        { "portal",             ("Portal Vein",            "Carries nutrient-rich blood from the digestive organs to the liver.", "Major Veins") },
-        { "hepatic",            ("Hepatic Vein",           "Returns blood from the liver to the inferior vena cava.", "Major Veins") },
-        { "renal vein",         ("Renal Vein",             "Returns deoxygenated blood from the kidneys to the inferior vena cava.", "Major Veins") },
-        { "femoral vein",       ("Femoral Vein",           "Returns blood from the lower limb to the iliac vein.", "Major Veins") },
-        { "saphenous",          ("Saphenous Vein",         "The longest vein in the body, running along the leg.", "Major Veins") },
+    { "pericardium",
+        ("Pericardium",
+         "The pericardium is a double-walled sac containing the heart and the roots of the great vessels. It protects the heart, reduces friction during movement, and contains pericardial fluid.",
+         "Heart") },
 
-        // ── CONDUCTION SYSTEM ─────────────────────────────────────────
-        { "sinoatrial",         ("Sinoatrial Node (SA)",   "The natural pacemaker of the heart located in the right atrium.", "Conduction System") },
-        { "sa node",            ("SA Node",                "The sinoatrial node — the heart's natural pacemaker.", "Conduction System") },
-        { "atrioventricular",   ("Atrioventricular Node (AV)","Receives the impulse from the SA node and transmits it to the ventricles.", "Conduction System") },
-        { "av node",            ("AV Node",                "Delays electrical impulse between atria and ventricles.", "Conduction System") },
-        { "bundle of his",      ("Bundle of His",          "Conducts electrical impulses from the AV node to the ventricles.", "Conduction System") },
-        { "purkinje",           ("Purkinje Fibers",        "Specialized fibers that rapidly conduct impulses through the ventricles.", "Conduction System") },
-        { "bundle branch",      ("Bundle Branch",          "Left and right branches carrying electrical signals down the septum.", "Conduction System") },
+    { "epicardium",
+        ("Epicardium",
+         "The epicardium is the outer layer of the heart wall and forms the visceral layer of the serous pericardium.",
+         "Heart") },
 
-        // ── BLOOD VESSELS (GENERIC) ───────────────────────────────────
-        { "artery",             ("Artery",                 "Blood vessels that carry oxygenated blood away from the heart to the body.", "Blood Vessels") },
-        { "vein",               ("Vein",                   "Blood vessels that carry deoxygenated blood back to the heart.", "Blood Vessels") },
-        { "capillary",          ("Capillary",              "The smallest blood vessels where exchange of oxygen, nutrients, and waste occurs.", "Blood Vessels") },
-        { "vessel",             ("Blood Vessel",           "Tubular structures that carry blood throughout the body.", "Blood Vessels") },
-        { "tunica",             ("Tunica",                 "The layered wall structure of blood vessels including intima, media, and adventitia.", "Blood Vessels") },
+    // ── HEART SURFACES & LANDMARKS ─────────────────────────────────
+    { "base of heart",
+        ("Base of Heart",
+         "The base of the heart is the broad posterior portion of the heart. It is formed mainly by the left atrium with contributions from the right atrium.",
+         "Heart") },
 
-        // ── LYMPHATIC ─────────────────────────────────────────────────
-        { "lymph",              ("Lymphatic Vessel",       "Vessels that carry lymph fluid and help remove waste from tissues.", "Lymphatic") },
-        { "thoracic duct",      ("Thoracic Duct",          "The largest lymphatic vessel, draining most of the body's lymph.", "Lymphatic") },
+    { "apex of heart",
+        ("Apex of Heart",
+         "The apex is the pointed inferior end of the heart and is formed mainly by the left ventricle.",
+         "Heart") },
+
+    { "anterior surface of heart",
+        ("Anterior Surface of Heart",
+         "The anterior surface is the front-facing surface of the heart, formed mainly by the right ventricle with contributions from the right atrium and left ventricle.",
+         "Heart") },
+
+    { "inferior surface of heart",
+        ("Inferior Surface of Heart",
+         "The inferior surface of the heart rests mainly on the diaphragm and is formed primarily by the ventricles.",
+         "Heart") },
+
+    { "coronary sulcus",
+        ("Coronary Sulcus",
+         "The coronary sulcus is a groove on the surface of the heart that separates the atria from the ventricles and contains important coronary vessels.",
+         "Heart") },
+
+    { "anterior interventricular sulcus",
+        ("Anterior Interventricular Sulcus",
+         "A groove on the anterior surface of the heart marking the separation between the right and left ventricles. It contains the anterior interventricular artery and associated veins.",
+         "Heart") },
+
+    { "sulcus terminalis of heart",
+        ("Sulcus Terminalis of Heart",
+         "A groove on the right atrium marking the external boundary between the smooth posterior portion and the rough anterior portion of the atrium.",
+         "Heart") },
+
+    // ── HEART CHAMBERS ────────────────────────────────────────────
+    { "left atrium",
+        ("Left Atrium",
+         "The left atrium is the upper chamber of the heart that receives oxygenated blood from the pulmonary veins and passes it to the left ventricle.",
+         "Heart Chambers") },
+
+    { "right atrium",
+        ("Right Atrium",
+         "The right atrium is the upper chamber of the heart that receives venous blood from the superior and inferior venae cavae and the coronary sinus.",
+         "Heart Chambers") },
+
+    { "left ventricle",
+        ("Left Ventricle",
+         "The left ventricle is the lower chamber that receives blood from the left atrium and pumps it into the aorta for systemic circulation.",
+         "Heart Chambers") },
+
+    { "right ventricle",
+        ("Right Ventricle",
+         "The right ventricle is the lower chamber that receives blood from the right atrium and pumps it through the pulmonary trunk toward the lungs.",
+         "Heart Chambers") },
+
+    { "atrium",
+        ("Atrium",
+         "An atrium is an upper chamber of the heart through which blood enters the ventricles. The human heart has a left and a right atrium.",
+         "Heart Chambers") },
+
+    { "ventricle",
+        ("Ventricle",
+         "A ventricle is a lower chamber of the heart that receives blood from an atrium and pumps it toward the lungs or the rest of the body.",
+         "Heart Chambers") },
+
+    // ── HEART SEPTA ───────────────────────────────────────────────
+    { "interatrial septum",
+        ("Interatrial Septum",
+         "The interatrial septum is the wall of tissue separating the right and left atria of the heart.",
+         "Heart Chambers") },
+
+    { "interventricular septum",
+        ("Interventricular Septum",
+         "The interventricular septum is the strong wall separating the right and left ventricles of the heart. Much of it is muscular.",
+         "Heart Chambers") },
+
+    { "atrioventricular septum",
+        ("Atrioventricular Septum",
+         "The atrioventricular septum is a portion of the tissue separating the atrial and ventricular regions of the heart.",
+         "Heart Chambers") },
+
+    // ── HEART VALVES ──────────────────────────────────────────────
+    { "aortic valve",
+        ("Aortic Valve",
+         "The aortic valve lies between the left ventricle and the aorta. It opens during ventricular contraction to allow blood into the aorta and closes to prevent backflow.",
+         "Heart Valves") },
+
+    { "pulmonary valve",
+        ("Pulmonary Valve",
+         "The pulmonary valve lies between the right ventricle and the pulmonary artery. It opens during ventricular contraction and prevents blood from flowing back into the right ventricle.",
+         "Heart Valves") },
+
+    { "right atrioventricular valve",
+        ("Tricuspid Valve",
+         "The tricuspid valve is the right atrioventricular valve located between the right atrium and right ventricle. It prevents blood from flowing back into the atrium during ventricular contraction.",
+         "Heart Valves") },
+
+    { "tricuspid valve",
+        ("Tricuspid Valve",
+         "The tricuspid valve is the right atrioventricular valve with three cusps. It regulates blood flow from the right atrium into the right ventricle.",
+         "Heart Valves") },
+
+    { "atrioventricular valve",
+        ("Atrioventricular Valve",
+         "Atrioventricular valves regulate blood flow between the atria and ventricles and help prevent backward flow during ventricular contraction.",
+         "Heart Valves") },
+
+    { "left atrioventricular orifice",
+        ("Left Atrioventricular Orifice",
+         "The left atrioventricular orifice is the opening between the left atrium and left ventricle through which blood passes.",
+         "Heart Valves") },
+
+    { "right atrioventricular orifice",
+        ("Right Atrioventricular Orifice",
+         "The right atrioventricular orifice is the opening between the right atrium and right ventricle through which blood passes.",
+         "Heart Valves") },
+
+    { "valve of coronary sinus",
+        ("Valve of Coronary Sinus",
+         "The valve of the coronary sinus is a fold of tissue at the opening of the coronary sinus into the right atrium. It may help prevent blood from flowing backward into the coronary sinus.",
+         "Heart Valves") },
+
+    // ── GREAT VESSELS ─────────────────────────────────────────────
+    { "aorta",
+        ("Aorta",
+         "The aorta is the main and largest artery of the body. It originates from the left ventricle and distributes oxygenated blood throughout the systemic circulation.",
+         "Great Vessels") },
+
+    { "ascending aorta",
+        ("Ascending Aorta",
+         "The ascending aorta is the first portion of the aorta, beginning at the base of the left ventricle and ascending upward before continuing into the aortic arch.",
+         "Great Vessels") },
+
+    { "aortic arch",
+        ("Aortic Arch",
+         "The aortic arch is the curved portion of the aorta between the ascending and descending aorta. It gives rise to major arteries supplying the head, neck, and upper limbs.",
+         "Great Vessels") },
+
+    { "descending aorta",
+        ("Descending Aorta",
+         "The descending aorta begins at the aortic arch and travels downward through the thorax and abdomen. It consists of thoracic and abdominal portions.",
+         "Great Vessels") },
+
+    { "thoracic aorta",
+        ("Thoracic Aorta",
+         "The thoracic aorta is the portion of the descending aorta located within the thorax.",
+         "Great Vessels") },
+
+    { "abdominal aorta",
+        ("Abdominal Aorta",
+         "The abdominal aorta is the portion of the aorta located within the abdomen. It eventually divides into the common iliac arteries.",
+         "Great Vessels") },
+
+    { "root of aorta",
+        ("Root of Aorta",
+         "The aortic root is the portion of the aorta beginning at the aortic valve and extending to the ascending aorta.",
+         "Great Vessels") },
+
+    { "pulmonary trunk",
+        ("Pulmonary Trunk",
+         "The pulmonary trunk is the main pulmonary artery arising from the right side of the heart. It carries deoxygenated blood from the right ventricle toward the lungs.",
+         "Great Vessels") },
+
+    { "pulmonary artery",
+        ("Pulmonary Artery",
+         "The pulmonary arteries carry deoxygenated blood from the right side of the heart to the lungs. They are an exception to the usual pattern of arteries carrying oxygenated blood.",
+         "Great Vessels") },
+
+    { "pulmonary arteries",
+        ("Pulmonary Arteries",
+         "The pulmonary arteries are vessels of the pulmonary circulation that carry deoxygenated blood from the right side of the heart to the lungs.",
+         "Great Vessels") },
+
+    { "pulmonary vein",
+        ("Pulmonary Vein",
+         "The pulmonary veins carry oxygenated blood from the lungs to the left atrium. There are normally four main pulmonary veins, two from each lung.",
+         "Great Vessels") },
+
+    { "pulmonary veins",
+        ("Pulmonary Veins",
+         "The pulmonary veins return oxygenated blood from the lungs to the left atrium as part of the pulmonary circulation.",
+         "Great Vessels") },
+
+    { "superior vena cava",
+        ("Superior Vena Cava",
+         "The superior vena cava is a large vein that returns deoxygenated blood from the upper half of the body to the right atrium.",
+         "Great Vessels") },
+
+    { "inferior vena cava",
+        ("Inferior Vena Cava",
+         "The inferior vena cava is a large vein that carries deoxygenated blood from the lower and middle portions of the body to the right atrium.",
+         "Great Vessels") },
+
+    { "vena cava",
+        ("Vena Cava",
+         "The venae cavae are the superior and inferior venae cavae, which return deoxygenated blood from the systemic circulation to the right atrium.",
+         "Great Vessels") },
+
+    // ── CORONARY CIRCULATION ──────────────────────────────────────
+    { "coronary circulation",
+        ("Coronary Circulation",
+         "Coronary circulation is the blood circulation supplying the heart muscle. Coronary arteries deliver oxygenated blood to the myocardium, while cardiac veins drain blood from the heart muscle.",
+         "Coronary Vessels") },
+
+    { "cardiac vessels",
+        ("Cardiac Vessels",
+         "Cardiac vessels are the blood vessels that supply and drain the heart muscle as part of the coronary circulation.",
+         "Coronary Vessels") },
+
+    { "left coronary artery",
+        ("Left Coronary Artery",
+         "The left coronary artery arises from the aorta above the left cusp of the aortic valve and supplies blood to the left side of the heart muscle.",
+         "Coronary Vessels") },
+
+    { "right coronary artery",
+        ("Right Coronary Artery",
+         "The right coronary artery originates from the right aortic sinus and travels along the right coronary sulcus. It supplies the right side of the heart and portions of the interventricular septum.",
+         "Coronary Vessels") },
+
+    { "left anterior descending artery",
+        ("Left Anterior Descending Artery",
+         "The left anterior descending artery is a branch of the left coronary artery that travels along the anterior interventricular sulcus and supplies portions of the heart muscle.",
+         "Coronary Vessels") },
+
+    { "lad",
+        ("Left Anterior Descending Artery",
+         "The LAD, or left anterior descending artery, is a branch of the left coronary artery that runs along the anterior interventricular sulcus.",
+         "Coronary Vessels") },
+
+    { "circumflex artery of heart",
+        ("Circumflex Artery",
+         "The circumflex artery is a branch of the left coronary artery that follows the left portion of the coronary sulcus around the heart.",
+         "Coronary Vessels") },
+
+    { "circumflex artery",
+        ("Circumflex Artery",
+         "The circumflex artery is a branch of the left coronary artery that travels along the coronary sulcus.",
+         "Coronary Vessels") },
+
+    { "coronary sinus",
+        ("Coronary Sinus",
+         "The coronary sinus is a large venous vessel formed by veins of the heart. It collects less-oxygenated blood from the heart muscle and drains it into the right atrium.",
+         "Coronary Vessels") },
+
+    { "cardiac veins",
+        ("Cardiac Veins",
+         "Cardiac veins drain less-oxygenated blood from the heart muscle and return it toward the right atrium, primarily through the coronary sinus.",
+         "Coronary Vessels") },
+
+    { "great cardiac vein",
+        ("Great Cardiac Vein",
+         "The great cardiac vein is a major vein of the heart that contributes to the coronary venous drainage.",
+         "Coronary Vessels") },
+
+    { "middle cardiac vein",
+        ("Middle Cardiac Vein",
+         "The middle cardiac vein is a cardiac vein that participates in drainage of blood from the heart muscle toward the coronary sinus.",
+         "Coronary Vessels") },
+
+    // ── CONDUCTION SYSTEM ─────────────────────────────────────────
+    { "electrical conduction system",
+        ("Electrical Conduction System of the Heart",
+         "The electrical conduction system transmits signals that coordinate contraction of the heart. The signal normally begins at the sinoatrial node, passes to the atrioventricular node, and continues through the Bundle of His and bundle branches.",
+         "Conduction System") },
+
+    { "sinoatrial node",
+        ("Sinoatrial Node",
+         "The sinoatrial node is a group of pacemaker cells located in the wall of the right atrium. It generates electrical impulses that establish the normal rhythm of the heart.",
+         "Conduction System") },
+
+    { "sa node",
+        ("Sinoatrial Node",
+         "The SA node is the heart's natural pacemaker. It produces electrical impulses that initiate the normal heartbeat.",
+         "Conduction System") },
+
+    { "atrioventricular node",
+        ("Atrioventricular Node",
+         "The atrioventricular node is part of the heart's electrical conduction system. It receives electrical impulses from the atria and conducts them toward the ventricles.",
+         "Conduction System") },
+
+    { "av node",
+        ("Atrioventricular Node",
+         "The AV node electrically connects the atria and ventricles and helps coordinate the timing of ventricular contraction.",
+         "Conduction System") },
+
+    // ── MAJOR ARTERIES ────────────────────────────────────────────
+    { "brachiocephalic artery",
+        ("Brachiocephalic Artery",
+         "The brachiocephalic artery is a major branch of the aortic arch that supplies the right side of the head and neck and the right upper limb.",
+         "Major Arteries") },
+
+    { "brachiocephalic",
+        ("Brachiocephalic Artery",
+         "The brachiocephalic artery is a major branch of the aortic arch supplying the right side of the head and neck and the right upper limb.",
+         "Major Arteries") },
+
+    { "common carotid artery",
+        ("Common Carotid Artery",
+         "The common carotid arteries are major arteries of the head and neck. Each divides into internal and external carotid arteries.",
+         "Major Arteries") },
+
+    { "carotid artery",
+        ("Carotid Artery",
+         "The carotid arteries are major vessels supplying the head and neck, including the brain and face.",
+         "Major Arteries") },
+
+    { "internal carotid artery",
+        ("Internal Carotid Artery",
+         "The internal carotid artery arises from the common carotid artery and supplies the brain and eyes.",
+         "Major Arteries") },
+
+    { "external carotid artery",
+        ("External Carotid Artery",
+         "The external carotid artery arises from the common carotid artery and supplies structures of the face, scalp, and neck.",
+         "Major Arteries") },
+
+    { "subclavian artery",
+        ("Subclavian Artery",
+         "The subclavian arteries are major arteries located below the clavicles. They supply the upper limbs and give branches to the head and thorax.",
+         "Major Arteries") },
+
+    { "brachial artery",
+        ("Brachial Artery",
+         "The brachial artery is the major artery of the upper arm. It continues from the axillary artery and divides into the radial and ulnar arteries near the elbow.",
+         "Major Arteries") },
+
+    { "radial artery",
+        ("Radial Artery",
+         "The radial artery is the main artery on the lateral side of the forearm. It arises from the brachial artery and continues toward the hand.",
+         "Major Arteries") },
+
+    { "ulnar artery",
+        ("Ulnar Artery",
+         "The ulnar artery is the main artery on the medial side of the forearm. It arises from the brachial artery and contributes to the blood supply of the hand.",
+         "Major Arteries") },
+
+    { "renal artery",
+        ("Renal Artery",
+         "The renal arteries are paired arteries that supply blood to the kidneys and arise from the abdominal aorta.",
+         "Major Arteries") },
+
+    { "femoral artery",
+        ("Femoral Artery",
+         "The femoral artery is the main arterial supply to the thigh and lower limb. It continues from the external iliac artery and becomes the popliteal artery near the adductor hiatus.",
+         "Major Arteries") },
+
+    { "popliteal artery",
+        ("Popliteal Artery",
+         "The popliteal artery is a continuation of the femoral artery behind the knee. It eventually divides into the anterior and posterior tibial arteries.",
+         "Major Arteries") },
+
+    { "anterior tibial artery",
+        ("Anterior Tibial Artery",
+         "The anterior tibial artery supplies the anterior compartment of the leg and the dorsal surface of the foot.",
+         "Major Arteries") },
+
+    { "posterior tibial artery",
+        ("Posterior Tibial Artery",
+         "The posterior tibial artery supplies the posterior compartment of the leg and the plantar surface of the foot.",
+         "Major Arteries") },
+
+    { "vertebral artery",
+        ("Vertebral Artery",
+         "The vertebral arteries are branches of the subclavian arteries that travel through the cervical region and contribute to the blood supply of the brain and spinal cord.",
+         "Major Arteries") },
+
+    // ── MAJOR VEINS ───────────────────────────────────────────────
+    { "jugular vein",
+        ("Jugular Vein",
+         "The jugular veins return deoxygenated blood from the head and neck toward the heart. They include the internal and external jugular veins.",
+         "Major Veins") },
+
+    { "internal jugular vein",
+        ("Internal Jugular Vein",
+         "The internal jugular vein drains blood from the brain and superficial regions of the face and neck. It joins the subclavian vein to form the brachiocephalic vein.",
+         "Major Veins") },
+
+    { "external jugular vein",
+        ("External Jugular Vein",
+         "The external jugular vein drains much of the exterior of the cranium and portions of the face and neck before emptying into the subclavian vein.",
+         "Major Veins") },
+
+    { "subclavian vein",
+        ("Subclavian Vein",
+         "The subclavian vein drains blood from the upper limb and joins the internal jugular vein to form the brachiocephalic vein.",
+         "Major Veins") },
+
+    { "brachiocephalic vein",
+        ("Brachiocephalic Vein",
+         "The brachiocephalic veins are formed by the union of the internal jugular and subclavian veins. The left and right brachiocephalic veins join to form the superior vena cava.",
+         "Major Veins") },
+
+    { "hepatic portal vein",
+        ("Hepatic Portal Vein",
+         "The hepatic portal vein carries blood from the gastrointestinal tract, gallbladder, pancreas, and spleen to the liver.",
+         "Major Veins") },
+
+    { "portal vein",
+        ("Hepatic Portal Vein",
+         "The hepatic portal vein carries blood from the digestive organs and related structures to the liver before it returns to the systemic circulation.",
+         "Major Veins") },
+
+    { "hepatic veins",
+        ("Hepatic Veins",
+         "The hepatic veins drain blood from the liver into the inferior vena cava.",
+         "Major Veins") },
+
+    { "renal vein",
+        ("Renal Vein",
+         "The renal veins drain blood from the kidneys and return it to the inferior vena cava.",
+         "Major Veins") },
+
+    { "femoral vein",
+        ("Femoral Vein",
+         "The femoral vein accompanies the femoral artery in the thigh and continues from the popliteal vein before becoming the external iliac vein.",
+         "Major Veins") },
+
+    { "great saphenous vein",
+        ("Great Saphenous Vein",
+         "The great saphenous vein is a large superficial vein of the lower limb and is the longest vein in the body. It returns blood from the foot, leg, and thigh.",
+         "Major Veins") },
+
+    { "popliteal vein",
+        ("Popliteal Vein",
+         "The popliteal vein is a deep vein located behind the knee that continues into the femoral vein.",
+         "Major Veins") },
+
+    // ── MICRO-CIRCULATION ─────────────────────────────────────────
+    { "artery",
+        ("Artery",
+         "An artery is a blood vessel that carries blood away from the heart. Most arteries carry oxygenated blood, while pulmonary arteries carry deoxygenated blood to the lungs.",
+         "Blood Vessels") },
+
+    { "vein",
+        ("Vein",
+         "A vein is a blood vessel that carries blood toward the heart. Most veins carry deoxygenated blood, with pulmonary veins being an important exception.",
+         "Blood Vessels") },
+
+    { "capillary",
+        ("Capillary",
+         "A capillary is a very small blood vessel connecting arterioles and venules. Capillaries are major sites for exchange of oxygen, nutrients, waste, and other substances with surrounding tissues.",
+         "Blood Vessels") },
+
+    { "arteriole",
+        ("Arteriole",
+         "An arteriole is a small blood vessel that branches from an artery and leads toward capillaries. Its muscular walls help regulate vascular resistance and blood flow.",
+         "Blood Vessels") },
+
+    // ── PULMONARY CIRCULATION ─────────────────────────────────────
+    { "pulmonary circulation",
+        ("Pulmonary Circulation",
+         "Pulmonary circulation carries deoxygenated blood from the right side of the heart to the lungs, where it is oxygenated, and returns the oxygenated blood to the left side of the heart.",
+         "Pulmonary Circulation") },
+
+    { "pulmonary vessels",
+        ("Pulmonary Vessels",
+         "Pulmonary vessels include the pulmonary arteries and pulmonary veins that transport blood between the heart and lungs.",
+         "Pulmonary Circulation") },
+
+    // ── SYSTEMIC CIRCULATION ──────────────────────────────────────
+    { "systemic arteries",
+        ("Systemic Arteries",
+         "Systemic arteries carry oxygenated blood from the left side of the heart to tissues throughout the body.",
+         "Systemic Circulation") },
+
     };
+
 
     [MenuItem("Anatomia 3D/Auto Setup Cardiovascular System")]
     public static void ShowWindow() =>

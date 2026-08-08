@@ -31,20 +31,20 @@ public class SkeletonAutoSetup : EditorWindow
     {
         // ── SKULL ────────────────────────────────────────────
         { "mandible",        ("Mandible",          "The mandible, or lower jaw, is the only movable bone in the skull. It holds the lower teeth.", "Skull") },
-        { "frontal",         ("Frontal Bone",      "Forms the forehead and upper part of the eye sockets.", "Skull") },
-        { "temporal",        ("Temporal Bone",     "Located on the sides of the skull, housing the middle and inner ear structures.", "Skull") },
-        { "parietal",        ("Parietal Bone",     "Two parietal bones form the top and sides of the skull.", "Skull") },
-        { "occipital",       ("Occipital Bone",    "Forms the back and base of the skull, containing the foramen magnum.", "Skull") },
-        { "zygomatic",       ("Zygomatic Bone",    "Forms the cheekbone and part of the eye socket.", "Skull") },
-        { "maxilla",         ("Maxilla",           "Forms the upper jaw, holds upper teeth, and forms part of the hard palate.", "Skull") },
-        { "nasal",           ("Nasal Bone",        "Two small bones that form the bridge of the nose.", "Skull") },
+        { "frontal",         ("Frontal Bone",      "The frontal bone forms the forehead, the roofs of the orbits, and the anterior part of the cranial cavity.", "Skull") },
+        { "temporal",        ("Temporal Bone",     "A paired cranial bone located on the sides and base of the skull that houses the organs of hearing and balance.", "Skull") },
+        { "parietal",        ("Parietal Bone",     "One of two cranial bones forming the superior and lateral walls of the skull.", "Skull") },
+        { "occipital",       ("Occipital Bone",    "The occipital bone forms the posterior and inferior parts of the skull and contains the foramen magnum through which the spinal cord passes.", "Skull") },
+        { "zygomatic",       ("Zygomatic Bone",    "A paired facial bone that forms the prominence of the cheek and contributes to the lateral wall and floor of the orbit.", "Skull") },
+        { "maxilla",         ("Maxilla",           "The maxilla is a paired facial bone that forms the upper jaw, the anterior part of the hard palate, and portions of the orbit and nasal cavity.", "Skull") },
+        { "nasal",           ("Nasal Bone",        "One of two small paired bones that form the bridge of the nose.", "Skull") },
         { "sphenoid",        ("Sphenoid Bone",     "A butterfly-shaped bone at the base of the skull.", "Skull") },
-        { "ethmoid",         ("Ethmoid Bone",      "A light, spongy bone between the eye sockets forming part of the nasal cavity.", "Skull") },
-        { "vomer",           ("Vomer",             "A thin bone forming the lower part of the nasal septum.", "Skull") },
-        { "lacrimal",        ("Lacrimal Bone",     "The smallest bone of the face, forming part of the eye socket.", "Skull") },
-        { "palatine",        ("Palatine Bone",     "Forms the back of the hard palate and part of the nasal cavity.", "Skull") },
-        { "hyoid",           ("Hyoid Bone",        "A U-shaped bone in the neck that anchors the tongue muscles. It articulates with no other bone.", "Skull") },
-        { "skull",           ("Skull",             "The bony structure that forms the head, protecting the brain and supporting facial structures.", "Skull") },
+        { "ethmoid",         ("Ethmoid Bone",      "An unpaired bone located between the orbits that separates the nasal cavity from the cranial cavity and contributes to the nasal septum and medial walls of the orbit.", "Skull") },
+        { "vomer",           ("Vomer",             "An unpaired facial bone that forms the inferior portion of the nasal septum.", "Skull") },
+        { "lacrimal",        ("Lacrimal Bone",     "A small, fragile facial bone located in the medial wall of the orbit that contains the lacrimal groove for tear drainage.", "Skull") },
+        { "palatine",        ("Palatine Bone",     "A paired facial bone that forms the posterior part of the hard palate and contributes to the nasal cavity and orbit.", "Skull") },
+        //{ "hyoid",           ("Hyoid Bone",        "A U-shaped bone in the neck that anchors the tongue muscles. It articulates with no other bone.", "Skull") },
+        { "skull",           ("Skull",             "The skull is the bony framework of the head that protects the brain and supports the structures of the face.", "Skull") },
  
         // ── VERTEBRAL COLUMN ─────────────────────────────────
         { "atlas",           ("Atlas (C1)",        "The first cervical vertebra, supporting the skull and allowing the nodding motion.", "Vertebral Column") },
@@ -54,6 +54,7 @@ public class SkeletonAutoSetup : EditorWindow
         { "lumbar",          ("Lumbar Vertebra",   "The 5 lumbar vertebrae are the largest and bear most of the body's weight.", "Vertebral Column") },
         { "sacrum",          ("Sacrum",            "A triangular bone formed by 5 fused vertebrae, connecting the spine to the pelvis.", "Vertebral Column") },
         { "coccyx",          ("Coccyx",            "The tailbone, formed by 3-5 fused vertebrae at the base of the spine.", "Vertebral Column") },
+        { "hyoid",           ("Hyoid Bone",        "A U-shaped bone in the neck that anchors the tongue muscles. It articulates with no other bone.", "Vertebral Column") },
         { "vertebra",        ("Vertebra",          "Vertebrae are the individual bones making up the spinal column, protecting the spinal cord.", "Vertebral Column") },
  
         // ── THORAX ───────────────────────────────────────────
@@ -62,7 +63,7 @@ public class SkeletonAutoSetup : EditorWindow
         { "manubrium",       ("Manubrium",         "The upper section of the sternum, articulating with the clavicles and first ribs.", "Thorax") },
         { "xiphoid",         ("Xiphoid Process",   "The small cartilaginous tip at the lower end of the sternum.", "Thorax") },
         { "costal cartilage",("Costal Cartilage",  "Cartilage connecting the ribs to the sternum, giving the chest wall flexibility.", "Thorax") },
-        { "clavicle",        ("Clavicle",          "The collarbone connects the shoulder blade to the sternum.", "Thorax") },
+        //{ "clavicle",        ("Clavicle",          "The collarbone connects the shoulder blade to the sternum.", "Thorax") },
  
         // ── UPPER LIMB ────────────────────────────────────────
         { "scapula",         ("Scapula",           "The shoulder blade connects the upper arm to the clavicle.", "Upper Limb") },
@@ -79,6 +80,7 @@ public class SkeletonAutoSetup : EditorWindow
         { "hamate",          ("Hamate Bone",       "A wedge-shaped carpal bone with a distinctive hook.", "Upper Limb") },
         { "carpal",          ("Carpals",           "8 small bones forming the wrist joint.", "Upper Limb") },
         { "metacarpal",      ("Metacarpal",        "5 bones forming the palm of the hand.", "Upper Limb") },
+        { "clavicle",        ("Clavicle",          "The collarbone connects the shoulder blade to the sternum.", "Upper Limb") },
  
         // ── PELVIS ───────────────────────────────────────────
         { "ilium",           ("Ilium",             "The largest part of the hip bone, forming the upper part of the pelvis.", "Pelvis") },
