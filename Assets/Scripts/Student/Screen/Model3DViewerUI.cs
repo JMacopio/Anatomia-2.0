@@ -110,6 +110,14 @@ public class Model3DViewerUI : MonoBehaviour
     private bool isZoomed = false;
     private Coroutine zoomCoroutine = null;
 
+    [Header("Text-to-Speech")]
+    public Button speakBtn;         // 🔊 button in BoneInfoPanel
+    public Image speakBtnIcon;     // icon swaps between speaker/stop
+    public Sprite speakIconIdle;    // 🔊 speaker icon
+    public Sprite speakIconPlaying; // ⏸ stop/pause icon
+
+    private string currentSpeechText = "";
+
 
     void Start()
     {
@@ -129,6 +137,8 @@ public class Model3DViewerUI : MonoBehaviour
 
         if (boneInfoPanel) boneInfoPanel.SetActive(false);
         StartCoroutine(HideHintAfter(4f));
+
+        speakBtn?.onClick.AddListener(OnSpeakButtonPressed);
     }
 
     public void LoadSystem(AnatomySystemData system)
@@ -502,6 +512,11 @@ public class Model3DViewerUI : MonoBehaviour
         isBoneInfoOpen = true;
         tapHintBubble?.SetActive(false);
 
+        // For text to speech, stop any old speech and save the new text
+        TextToSpeechManager.Instance?.Stop();           // stop old speech
+        currentSpeechText = $"{name}. {description}";   // save new text
+        UpdateSpeakButtonIcon(false);                    // reset icon
+
         //Stop any running animation, then slide up
         //StopCoroutine(nameof(SlidePanel));
         //StartCoroutine(SlidePanel(true));
@@ -553,6 +568,8 @@ public class Model3DViewerUI : MonoBehaviour
         RestoreHighlight();
 
         ZoomOut();  // reset zoom when closing info
+
+        TextToSpeechManager.Instance?.Stop(); // stop any speech when closing info
 
         // FIXED — stop using string, use reference instead
         if (slidePanelCoroutine != null) StopCoroutine(slidePanelCoroutine);
@@ -1101,5 +1118,44 @@ public class Model3DViewerUI : MonoBehaviour
         modelCamera.transform.rotation = toRot;
         modelCamera.fieldOfView = toFOV;
         zoomCoroutine = null;
+    }
+
+    void OnSpeakButtonPressed()
+    {
+        if (TextToSpeechManager.Instance == null) return;
+
+        if (TextToSpeechManager.Instance.IsSpeaking())
+        {
+            // Currently speaking — stop it
+            TextToSpeechManager.Instance.Stop();
+            UpdateSpeakButtonIcon(false);
+        }
+        else
+        {
+            // Not speaking — start reading current bone info
+            TextToSpeechManager.Instance.Speak(currentSpeechText);
+            UpdateSpeakButtonIcon(true);
+            StartCoroutine(WatchSpeechEnd());
+        }
+    }
+
+    void UpdateSpeakButtonIcon(bool isPlaying)
+    {
+        if (speakBtnIcon == null) return;
+        speakBtnIcon.sprite = isPlaying ? speakIconPlaying : speakIconIdle;
+    }
+
+    // Polls until speech finishes, then resets the button icon
+    System.Collections.IEnumerator WatchSpeechEnd()
+    {
+        yield return new WaitForSeconds(0.3f); // let it start first
+
+        while (TextToSpeechManager.Instance != null &&
+               TextToSpeechManager.Instance.IsSpeaking())
+        {
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        UpdateSpeakButtonIcon(false);
     }
 }
