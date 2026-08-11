@@ -1,9 +1,44 @@
 fileFormatVersion: 2
-guid: 3abe896e8238b3d4a88fb90070ac7899
+guid: 2805e06627fbfb84d986175e5c008b72
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Artery
+    second: {fileID: 2100000, guid: 7a194cf7e4ab3b8439a6f6344d7a9356, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cartilage
+    second: {fileID: 2100000, guid: 1f64540c22c83054487b083f397e833d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Ligament
+    second: {fileID: 2100000, guid: 07915fe34d9a6224c97e65b6ffecfc02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Pulmonary artery
+    second: {fileID: 2100000, guid: fcaa8494105d8ff4f9057ad138940307, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Pulmonary vein
+    second: {fileID: 2100000, guid: 0bfe0703f818af944bfc8aeedafdab94, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Trapezius
+    second: {fileID: 2100000, guid: 8adabe1237860484098adbbaca141ea6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Vein
+    second: {fileID: 2100000, guid: 0cc7c27a3c70f334e898263f203fc40a, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -42,7 +77,7 @@ ModelImporter:
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
-    importLights: 0
+    importLights: 1
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
