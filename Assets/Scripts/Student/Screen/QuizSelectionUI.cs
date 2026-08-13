@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +15,7 @@ public class QuizSelectionUI : MonoBehaviour
     public TMP_Text avgScoreText;
     public TMP_Text perfectScoresText;
 
-    // Sample quiz data � in production load from Firestore
+    // Sample quiz data — in production load from Firestore
     private List<QuizData> availableQuizzes = new List<QuizData>()
     {
         new QuizData("Skeletal System Basics",    "Skeletal System",   "easy",   10, 4, 40),
@@ -35,7 +35,7 @@ public class QuizSelectionUI : MonoBehaviour
 
     void SetupSampleQuestions()
     {
-        // Quiz 1 � mix of True/False and Multiple Choice
+        // Quiz 1 — mix of True/False and Multiple Choice
         availableQuizzes[0].questions = new List<QuizQuestion>
         {
             new QuizQuestion("The skull protects the brain.", true,
@@ -55,7 +55,7 @@ public class QuizSelectionUI : MonoBehaviour
                 "The femur (thigh bone) is the longest bone in the body."),
         };
 
-        // Quiz 2 � mainly Multiple Choice
+        // Quiz 2 — mainly Multiple Choice
         availableQuizzes[1].questions = new List<QuizQuestion>
         {
             new QuizQuestion("How many muscles are in the human body?",
@@ -133,12 +133,13 @@ public class QuizQuestion
 {
     public string questionId;
     public string questionText;
-    public string questionType;    // "True/False" | "Multiple Choice"
+    public string questionType;    // "True/False" | "Multiple Choice" | "Image-Based"
     public List<string> options = new List<string>(); // for MC only
     public string correctAnswer;   // "true"/"false" or exact option text
     public string difficulty;      // "Easy" | "Medium" | "Hard"
     public int points;
     public string explanation;     // optional explanation shown after answer
+    public string imageUrl;        // ← NEW: URL of question image (for Image-Based type)
 
     // True/False constructor
     public QuizQuestion(string text, bool correct, string explain = "")
@@ -158,6 +159,23 @@ public class QuizQuestion
     {
         questionText = text;
         questionType = "Multiple Choice";
+        options = opts;
+        correctAnswer = correct;
+        difficulty = diff;
+        points = pts;
+        explanation = explain;
+    }
+
+    // ── NEW: Image-Based constructor ──────────────────────────
+    // Student sees an image of a structure (from the 3D model)
+    // and must identify it via multiple choice options
+    public QuizQuestion(string text, string imgUrl, List<string> opts,
+                        string correct, string diff = "Medium",
+                        int pts = 25, string explain = "")
+    {
+        questionText = text;
+        questionType = "Image-Based";
+        imageUrl = imgUrl;
         options = opts;
         correctAnswer = correct;
         difficulty = diff;

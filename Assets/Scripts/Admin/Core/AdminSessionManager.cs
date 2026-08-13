@@ -50,6 +50,7 @@ public class QuestionRecord
     public string difficulty;     // "Easy" | "Medium" | "Hard"
     public int points;
     public string explanation;      // optional explanation shown after answer
+    public string imageUrl;         // optional URL for image-based questions
 }
 
 [System.Serializable]
@@ -128,9 +129,7 @@ public class StudentActivityStats
     public int averagePoints;
 }
 
-
-
-public class AdminSessionManager : MonoBehaviour
+    public class AdminSessionManager : MonoBehaviour
 {
     public static AdminSessionManager Instance { get; private set; }
 
@@ -370,7 +369,9 @@ public class AdminSessionManager : MonoBehaviour
             { "options",       q.options },
             { "correctAnswer", q.correctAnswer },
             { "difficulty",    q.difficulty },
-            { "points",        q.points }
+            { "points",        q.points },
+            { "explanation",   q.explanation ?? "" },
+            { "imageUrl",      q.imageUrl ?? "" }   // ← ADD THIS LINE
         };
         db.Collection("quizzes").Document(quizId)
             .Collection("questions").AddAsync(data)

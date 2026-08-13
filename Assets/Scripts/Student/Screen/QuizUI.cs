@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class QuizUI : MonoBehaviour
@@ -32,6 +33,11 @@ public class QuizUI : MonoBehaviour
     public TMP_Text[] optionTexts;      // text inside each button
     public Image[] optionBGs;        // background image of each button
 
+    [Header("Image-Based Question Section")]
+    public GameObject imageQuestionSection;   // shown only for Image-Based type
+    public RawImage questionImage;          // displays the structure image
+    public GameObject imageLoadingSpinner;    // shown while downloading image
+
     [Header("Feedback")]
     public GameObject correctFeedback;
     public GameObject incorrectFeedback;
@@ -55,6 +61,9 @@ public class QuizUI : MonoBehaviour
     private float totalTime;
     private bool answerGiven = false;
     private List<QuizAnswerRecord> answers = new List<QuizAnswerRecord>();
+
+    // ── Image tag color field ─────────────────────────────────────
+    private Color imageTagColor = new Color(0.98f, 0.71f, 0.34f); // amber
 
     void Start()
     {
@@ -94,6 +103,40 @@ public class QuizUI : MonoBehaviour
     // ── Show Current Question ─────────────────────────────────
     void ShowQuestion()
     {
+        //if (currentIndex >= currentQuiz.questions.Count)
+        //{
+        //    EndQuiz();
+        //    return;
+        //}
+
+        //answerGiven = false;
+        //HideFeedback();
+        //ResetOptionColors();
+
+        //var q = currentQuiz.questions[currentIndex];
+
+        //// Question number
+        //questionCountText.text = $"Q{currentIndex + 1} / {currentQuiz.questions.Count}";
+
+        //// Question text
+        //questionText.text = q.questionText;
+
+        //// Show correct section based on type
+        //bool isTrueFalse = q.questionType == "True/False";
+
+        //trueFalseSection?.SetActive(isTrueFalse);
+        //multipleChoiceSection?.SetActive(!isTrueFalse);
+
+        //// Question type tag
+        //if (questionTypeText)
+        //    questionTypeText.text = isTrueFalse ? "TRUE / FALSE" : "MULTIPLE CHOICE";
+        //if (questionTypeTag)
+        //    questionTypeTag.color = isTrueFalse ? tfTagColor : mcTagColor;
+
+        //// Populate MC options
+        //if (!isTrueFalse)
+        //    PopulateOptions(q.options);
+
         if (currentIndex >= currentQuiz.questions.Count)
         {
             EndQuiz();
@@ -106,26 +149,35 @@ public class QuizUI : MonoBehaviour
 
         var q = currentQuiz.questions[currentIndex];
 
-        // Question number
         questionCountText.text = $"Q{currentIndex + 1} / {currentQuiz.questions.Count}";
-
-        // Question text
         questionText.text = q.questionText;
 
-        // Show correct section based on type
+        // Determine question type
         bool isTrueFalse = q.questionType == "True/False";
+        bool isImageBased = q.questionType == "Image-Based";
+        bool isMultiple = q.questionType == "Multiple Choice" || isImageBased;
 
+        // Show/hide sections
         trueFalseSection?.SetActive(isTrueFalse);
-        multipleChoiceSection?.SetActive(!isTrueFalse);
+        multipleChoiceSection?.SetActive(isMultiple);
+        imageQuestionSection?.SetActive(isImageBased);   // ← NEW
 
         // Question type tag
-        if (questionTypeText)
-            questionTypeText.text = isTrueFalse ? "TRUE / FALSE" : "MULTIPLE CHOICE";
+        string tagLabel = isTrueFalse ? "TRUE / FALSE"
+                         : isImageBased ? "IDENTIFY THE STRUCTURE"
+                         : "MULTIPLE CHOICE";
+        if (questionTypeText) questionTypeText.text = tagLabel;
         if (questionTypeTag)
-            questionTypeTag.color = isTrueFalse ? tfTagColor : mcTagColor;
+            questionTypeTag.color = isTrueFalse ? tfTagColor
+                                  : isImageBased ? imageTagColor
+                                  : mcTagColor;
 
-        // Populate MC options
-        if (!isTrueFalse)
+        // Load image if this is an Image-Based question
+        if (isImageBased && !string.IsNullOrEmpty(q.imageUrl))
+            StartCoroutine(LoadQuestionImage(q.imageUrl));
+
+        // Populate MC/Image options (same option buttons reused)
+        if (isMultiple)
             PopulateOptions(q.options);
     }
 
@@ -320,5 +372,31 @@ public class QuizUI : MonoBehaviour
     {
         StopAllCoroutines();
         UIManager.Instance.GoBack();
+    }
+
+    // ── Load Question Image ─────────────────────────────────
+    IEnumerator LoadQuestionImage(string url)
+    {
+        if (questionImage == null) yield break;
+
+        imageLoadingSpinner?.SetActive(true);
+        questionImage.texture = null;
+
+        using (UnityWebRequest req = UnityWebRequestTexture.GetTexture(url))
+        {
+            yield return req.SendWebRequest();
+
+            imageLoadingSpinner?.SetActive(false);
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                Texture2D tex = DownloadHandlerTexture.GetContent(req);
+                questionImage.texture = tex;
+            }
+            else
+            {
+                Debug.LogError($"[Quiz] Failed to load question image: {req.error}");
+            }
+        }
     }
 }
