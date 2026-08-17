@@ -28,13 +28,12 @@ public class AddQuestionModalUI : MonoBehaviour
     public GameObject tfSection;
     public TMP_Dropdown tfCorrectDropdown;  // "True" | "False"
 
-    [Header("Image-Based Section — NEW")]
+    [Header("Image-Based Section")]
     public GameObject imageSection;
     public RawImage imagePreview;
     public Button captureFromModelBtn;
     public Button removeImageBtn;
-    public TMP_Text uploadStatusText;
-    public GameObject uploadSpinner;
+    public TMP_Text uploadStatusText; // repurposed as "Image ready" label
 
     [Header("Common Settings")]
     public TMP_Dropdown difficultyDropdown;
@@ -52,7 +51,10 @@ public class AddQuestionModalUI : MonoBehaviour
 
     // Image capture state
     private string capturedImageUrl = "";
-    private bool isCapturing = false;
+    //private bool isCapturing = false;
+
+    // Now stores the raw Base64 string instead of a URL
+    private string capturedImageBase64 = "";
 
     void Start()
     {
@@ -267,7 +269,7 @@ public class AddQuestionModalUI : MonoBehaviour
                 difficulty = difficulty,
                 points = points,
                 explanation = explanation,
-                imageUrl = capturedImageUrl   // ← save the image URL
+                imageBase64 = capturedImageBase64   // ← stored directly in Firestore
             };
         }
         else if (isMC)
@@ -355,13 +357,11 @@ public class AddQuestionModalUI : MonoBehaviour
         captureFromModelBtn.onClick.AddListener(OnCaptureFromModel);
         removeImageBtn?.onClick.AddListener(OnRemoveImage);
 
-        // Add "Image-Based" as 3rd type option
         typeDropdown.ClearOptions();
         typeDropdown.AddOptions(new List<string>
             { "Multiple Choice", "True/False", "Image-Based" });
 
         if (uploadStatusText) uploadStatusText.gameObject.SetActive(false);
-        if (uploadSpinner) uploadSpinner.SetActive(false);
     }
 
     // ── Capture button pressed ────────────────────────────────
@@ -373,29 +373,46 @@ public class AddQuestionModalUI : MonoBehaviour
         //    return;
         //}
 
-        // Hide this modal temporarily, show the 3D viewer
+        if (ModelImageCapture.Instance == null)
+        {
+            ShowError("Image capture system not available.");
+            return;
+        }
+
         gameObject.SetActive(false);
         AdminUIManager.Instance.CloseAllModals();
 
-        // Open the 3D model viewer in "capture mode"
+        // Callback now receives Base64 string directly — no download needed
         Model3DCaptureMode.Instance?.EnterCaptureMode(OnCaptureComplete);
     }
 
     // ── Called back when admin confirms the captured view ─────
-    void OnCaptureComplete(bool success, string url, string errorMsg)
+    void OnCaptureComplete(bool success, string base64Image, string errorMsg)
     {
-        // Reopen this modal
+        //Reopen this model
         gameObject.SetActive(true);
         AdminUIManager.Instance.ShowModal(gameObject);
 
         if (!success)
         {
-            ShowError(errorMsg ?? "Capture failed. Try again.");
-            return;
+            if (!string.IsNullOrEmpty(errorMsg))
+                ShowError(errorMsg);
+            return; // silently do nothing if user cancelled (errorMsg null)
         }
 
-        capturedImageUrl = url;
-        LoadImagePreview(url);
+        capturedImageBase64 = base64Image;
+
+        // Decode immediately for local preview — no web request needed
+        Texture2D tex = ModelImageCapture.Base64ToTexture(base64Image);
+        if (imagePreview != null && tex != null)
+            imagePreview.texture = tex;
+
+        if (uploadStatusText)
+        {
+            uploadStatusText.gameObject.SetActive(true);
+            uploadStatusText.text = "✓ Image ready";
+            uploadStatusText.color = new Color(0.13f, 0.69f, 0.30f);
+        }
     }
 
     void LoadImagePreview(string url)
@@ -427,5 +444,109 @@ public class AddQuestionModalUI : MonoBehaviour
         capturedImageUrl = "";
         if (imagePreview) imagePreview.texture = null;
         if (uploadStatusText) uploadStatusText.gameObject.SetActive(false);
+    }
+
+    // ── Save question — stores Base64 string in Firestore ─────
+    void OnAddQuestionWithImage()
+    {
+        string questionText = questionField.text.Trim();
+        if (string.IsNullOrEmpty(questionText))
+        { ShowError("Please enter a question."); return; }
+
+        if (string.IsNullOrEmpty(TargetQuizId))
+        { ShowError("No quiz selected."); return; }
+
+        int typeIndex = typeDropdown.value;
+        bool isMC = typeIndex == 0;
+        bool isTF = typeIndex == 1;
+        bool isImage = typeIndex == 2;
+
+        string difficulty = difficultyDropdown.options[difficultyDropdown.value].text;
+        int points = int.TryParse(pointsField.text, out int p) ? p : 10;
+        string explanation = explanationField?.text.Trim() ?? "";
+
+        QuestionRecord q;
+
+        if (isImage)
+        {
+            if (string.IsNullOrEmpty(capturedImageBase64))
+            { ShowError("Please capture an image from the 3D model first."); return; }
+
+            var options = CollectOptions();
+            if (options.Count < 2)
+            { ShowError("Please enter at least 2 answer options."); return; }
+
+            int correctIdx = mcCorrectDropdown.value;
+            if (correctIdx >= options.Count)
+            { ShowError("Correct answer selection out of range."); return; }
+
+            q = new QuestionRecord
+            {
+                questionText = questionText,
+                questionType = "Image-Based",
+                options = options,
+                correctAnswer = options[correctIdx],
+                difficulty = difficulty,
+                points = points,
+                explanation = explanation,
+                imageBase64 = capturedImageBase64   // ← stored directly in Firestore
+            };
+        }
+        else if (isMC)
+        {
+            var options = CollectOptions();
+            if (options.Count < 2)
+            { ShowError("Please enter at least 2 options."); return; }
+
+            int correctIdx = mcCorrectDropdown.value;
+            if (correctIdx >= options.Count)
+            { ShowError("Correct answer selection out of range."); return; }
+
+            q = new QuestionRecord
+            {
+                questionText = questionText,
+                questionType = "Multiple Choice",
+                options = options,
+                correctAnswer = options[correctIdx],
+                difficulty = difficulty,
+                points = points,
+                explanation = explanation
+            };
+        }
+        else
+        {
+            string correctAnswer = tfCorrectDropdown.value == 0 ? "true" : "false";
+            q = new QuestionRecord
+            {
+                questionText = questionText,
+                questionType = "True/False",
+                options = new List<string>(),
+                correctAnswer = correctAnswer,
+                difficulty = difficulty,
+                points = points,
+                explanation = explanation
+            };
+        }
+
+        AdminSessionManager.Instance?.AddQuestion(TargetQuizId, q, () =>
+        {
+            Debug.Log($"[AddQuestion] Added: {questionText} ({q.questionType})");
+            capturedImageBase64 = "";
+            Close();
+        });
+    }
+
+    List<string> CollectOptions()
+    {
+        var options = new List<string>();
+        string opt1 = option1Field.text.Trim();
+        string opt2 = option2Field.text.Trim();
+        string opt3 = option3Field.text.Trim();
+        string opt4 = option4Field.text.Trim();
+        if (!string.IsNullOrEmpty(opt1)) options.Add(opt1);
+        if (!string.IsNullOrEmpty(opt2)) options.Add(opt2);
+        if (!string.IsNullOrEmpty(opt3)) options.Add(opt3);
+        if (!string.IsNullOrEmpty(opt4)) options.Add(opt4);
+        return options;
     }
 }

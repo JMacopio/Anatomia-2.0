@@ -139,7 +139,7 @@ public class QuizQuestion
     public string difficulty;      // "Easy" | "Medium" | "Hard"
     public int points;
     public string explanation;     // optional explanation shown after answer
-    public string imageUrl;        // ← NEW: URL of question image (for Image-Based type)
+    public string imageBase64;   // ← Base64 JPG string
 
     // True/False constructor
     public QuizQuestion(string text, bool correct, string explain = "")
@@ -169,13 +169,13 @@ public class QuizQuestion
     // ── NEW: Image-Based constructor ──────────────────────────
     // Student sees an image of a structure (from the 3D model)
     // and must identify it via multiple choice options
-    public QuizQuestion(string text, string imgUrl, List<string> opts,
+    public QuizQuestion(string text, string imgBase64, List<string> opts,
                         string correct, string diff = "Medium",
                         int pts = 25, string explain = "")
     {
         questionText = text;
         questionType = "Image-Based";
-        imageUrl = imgUrl;
+        imageBase64 = imgBase64;
         options = opts;
         correctAnswer = correct;
         difficulty = diff;

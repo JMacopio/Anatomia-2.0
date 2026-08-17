@@ -137,32 +137,24 @@ public class QuizUI : MonoBehaviour
         //if (!isTrueFalse)
         //    PopulateOptions(q.options);
 
-        if (currentIndex >= currentQuiz.questions.Count)
-        {
-            EndQuiz();
-            return;
-        }
+        if (currentIndex >= currentQuiz.questions.Count) { EndQuiz(); return; }
 
         answerGiven = false;
         HideFeedback();
         ResetOptionColors();
 
         var q = currentQuiz.questions[currentIndex];
-
         questionCountText.text = $"Q{currentIndex + 1} / {currentQuiz.questions.Count}";
         questionText.text = q.questionText;
 
-        // Determine question type
         bool isTrueFalse = q.questionType == "True/False";
         bool isImageBased = q.questionType == "Image-Based";
         bool isMultiple = q.questionType == "Multiple Choice" || isImageBased;
 
-        // Show/hide sections
         trueFalseSection?.SetActive(isTrueFalse);
         multipleChoiceSection?.SetActive(isMultiple);
-        imageQuestionSection?.SetActive(isImageBased);   // ← NEW
+        imageQuestionSection?.SetActive(isImageBased);
 
-        // Question type tag
         string tagLabel = isTrueFalse ? "TRUE / FALSE"
                          : isImageBased ? "IDENTIFY THE STRUCTURE"
                          : "MULTIPLE CHOICE";
@@ -172,11 +164,13 @@ public class QuizUI : MonoBehaviour
                                   : isImageBased ? imageTagColor
                                   : mcTagColor;
 
-        // Load image if this is an Image-Based question
-        if (isImageBased && !string.IsNullOrEmpty(q.imageUrl))
-            StartCoroutine(LoadQuestionImage(q.imageUrl));
+        // ── Decode Base64 directly — instant, no network call ────
+        if (isImageBased && questionImage != null)
+        {
+            Texture2D tex = ModelImageCapture.Base64ToTexture(q.imageBase64);
+            if (tex != null) questionImage.texture = tex;
+        }
 
-        // Populate MC/Image options (same option buttons reused)
         if (isMultiple)
             PopulateOptions(q.options);
     }

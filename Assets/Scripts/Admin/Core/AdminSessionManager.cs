@@ -50,7 +50,7 @@ public class QuestionRecord
     public string difficulty;     // "Easy" | "Medium" | "Hard"
     public int points;
     public string explanation;      // optional explanation shown after answer
-    public string imageUrl;         // optional URL for image-based questions
+    public string imageBase64;   // ← Base64 JPG string, stored directly in Firestore
 }
 
 [System.Serializable]
@@ -371,7 +371,7 @@ public class StudentActivityStats
             { "difficulty",    q.difficulty },
             { "points",        q.points },
             { "explanation",   q.explanation ?? "" },
-            { "imageUrl",      q.imageUrl ?? "" }   // ← ADD THIS LINE
+            { "imageBase64",   q.imageBase64 ?? "" }   // ← stored as a plain string field
         };
         db.Collection("quizzes").Document(quizId)
             .Collection("questions").AddAsync(data)
